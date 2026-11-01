@@ -1,30 +1,234 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Moon Star School Management System</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial;background:#f1f5f9;color:#1e293b}
-header{background:#102a43;color:white;padding:25px;text-align:center}
+
+body{
+ margin:0;
+ font-family:Arial;
+ background:#f1f5f9;
+ color:#1e293b;
+}
+
+header{
+ background:#102a43;
+ color:white;
+ padding:25px;
+ text-align:center;
+}
+
 header h1{margin:0;font-size:25px}
 header p{color:#b8dce0}
-.login{max-width:380px;margin:55px auto;background:white;padding:30px;border-radius:12px;box-shadow:0 5px 20px #0002}
+
+.login{
+ max-width:380px;
+ margin:55px auto;
+ background:white;
+ padding:30px;
+ border-radius:12px;
+ box-shadow:0 5px 20px #0002;
+}
+
 h2{text-align:center;color:#087e83}
-input,button{width:100%;padding:13px;margin:10px 0;border:1px solid #ddd;border-radius:6px}
-button{background:#087e83;color:white;border:0;font-weight:bold;cursor:pointer}
-footer{text-align:center;padding:20px;color:#64748b}
+
+input,button{
+ width:100%;
+ padding:13px;
+ margin:10px 0;
+ border:1px solid #ddd;
+ border-radius:6px;
+}
+
+button{
+ background:#087e83;
+ color:white;
+ border:0;
+ font-weight:bold;
+ cursor:pointer;
+}
+
+button:disabled{opacity:.6}
+
+#message{
+ text-align:center;
+ color:#dc2626;
+ font-size:14px;
+}
+
+#dashboard{
+ display:none;
+ max-width:600px;
+ margin:40px auto;
+ background:white;
+ padding:30px;
+ border-radius:12px;
+ text-align:center;
+}
+
+footer{
+ text-align:center;
+ padding:20px;
+ color:#64748b;
+}
 </style>
 </head>
+
 <body>
+
 <header>
 <h1>Moon Star Public High School</h1>
 <p>Khanwahan | School Management System</p>
-</header><div class="login">
+</header>
+
+<div class="login" id="loginBox">
+
 <h2>Admin Login</h2>
-<input type="text" placeholder="Admin Username">
-<input type="password" placeholder="Password">
-<button onclick="alert('Secure login system will be connected next.')">Login</button>
-</div><footer>© 2026 Moon Star School Management System</footer>
+
+<input
+ type="email"
+ id="email"
+ placeholder="Admin Email"
+ autocomplete="username"
+>
+
+<input
+ type="password"
+ id="password"
+ placeholder="Password"
+ autocomplete="current-password"
+>
+
+<button id="loginBtn" onclick="adminLogin()">
+Login
+</button>
+
+<p id="message"></p>
+
+</div>
+
+<div id="dashboard">
+
+<h2>Welcome Admin!</h2>
+
+<p>Moon Star School Management System</p>
+
+<p id="adminEmail"></p>
+
+<button onclick="logout()">Logout</button>
+
+</div>
+
+<footer>
+© 2026 Moon Star School Management System
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const SUPABASE_URL =
+"https://tglaxwhmfqtrdbtxdyqf.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
+
+const supabaseClient =
+window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+async function adminLogin(){
+
+ const email =
+ document.getElementById("email").value.trim();
+
+ const password =
+ document.getElementById("password").value;
+
+ const message =
+ document.getElementById("message");
+
+ const button =
+ document.getElementById("loginBtn");
+
+ message.style.color="#dc2626";
+
+ if(!email || !password){
+   message.innerText="Email aur Password enter karein.";
+   return;
+ }
+
+ button.disabled=true;
+ button.innerText="Please wait...";
+ message.innerText="";
+
+ try{
+
+   const {data,error} =
+   await supabaseClient.auth.signInWithPassword({
+     email:email,
+     password:password
+   });
+
+   if(error) throw error;
+
+   showDashboard(data.user);
+
+ }catch(error){
+
+   message.innerText="Login Failed: "+error.message;
+
+ }finally{
+
+   button.disabled=false;
+   button.innerText="Login";
+
+ }
+
+}
+
+function showDashboard(user){
+
+ document.getElementById("loginBox").style.display="none";
+
+ document.getElementById("dashboard").style.display="block";
+
+ document.getElementById("adminEmail").innerText=user.email;
+
+}
+
+async function logout(){
+
+ await supabaseClient.auth.signOut();
+
+ document.getElementById("dashboard").style.display="none";
+
+ document.getElementById("loginBox").style.display="block";
+
+ document.getElementById("password").value="";
+
+}
+
+async function checkLogin(){
+
+ const {data} =
+ await supabaseClient.auth.getSession();
+
+ if(data.session){
+   showDashboard(data.session.user);
+ }
+
+}
+
+checkLogin();
+
+</script>
+
 </body>
 </html>
