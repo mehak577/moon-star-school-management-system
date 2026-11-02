@@ -11,7 +11,7 @@
 body{margin:0;font-family:Arial;background:#f1f5f9;color:#1e293b}
 header{background:#102a43;color:white;padding:22px;text-align:center}
 header h1{margin:0;font-size:25px}
-header p{color:#b8dce0;margin-bottom:0}
+header p{color:#b8dce0}
 .login{max-width:380px;margin:45px auto;background:white;padding:25px;border-radius:12px;box-shadow:0 5px 20px #0002}
 h2{color:#087e83}
 .login h2{text-align:center}
@@ -31,13 +31,17 @@ a{color:#087e83;cursor:pointer}
 .panel{background:white;padding:20px;border-radius:10px;margin:20px 0;box-shadow:0 3px 12px #0001}
 .panel h2{text-align:left}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
-table{width:100%;border-collapse:collapse;min-width:750px}
+table{width:100%;border-collapse:collapse;min-width:850px}
 th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}
 th{background:#102a43;color:white}
 .table-wrap{overflow-x:auto}
-.small-btn{width:auto;padding:7px 12px;background:#b42318}
+.small-btn{width:auto;padding:7px 12px;margin:2px}
+.delete-btn{background:#b42318}
+.edit-btn{background:#2563eb}
 .status{padding:10px;background:#e0f2f1;border-radius:6px;margin:10px 0}
 .class-item{padding:12px;background:#f1f5f9;margin:7px 0;border-radius:6px}
+.seat-box{background:#e0f2f1;padding:12px;border-radius:8px;margin:10px 0}
+.seat-box input{background:#f8fafc;font-weight:bold;color:#087e83}
 footer{text-align:center;padding:20px;color:#64748b}
 </style>
 </head>
@@ -86,7 +90,7 @@ footer{text-align:center;padding:20px;color:#64748b}
 
 <div class="panel">
 <h2>Classes Management</h2>
-<input type="text" id="newClassName" placeholder="Enter Class Name (e.g. Nursery, Class 1)">
+<input type="text" id="newClassName" placeholder="Enter Class Name">
 <button onclick="addClass()">Add Class</button>
 <p id="classMessage"></p>
 <h3>Available Classes</h3>
@@ -94,43 +98,63 @@ footer{text-align:center;padding:20px;color:#64748b}
 </div>
 
 <div class="panel">
-<h2>Add New Student</h2>
+<h2 id="formTitle">Student Admission</h2>
+
 <div class="grid">
+<input id="grNumber" placeholder="GR Number">
 <input id="studentName" placeholder="Student Name">
 <input id="fatherName" placeholder="Father Name">
+<input id="caste" placeholder="Caste">
 <input id="dob" type="date">
-<select id="gender">
-<option value="">Select Gender</option>
-<option>Male</option>
-<option>Female</option>
-</select>
-<select id="className">
+<input id="phoneNumber" placeholder="Phone Number">
+
+<select id="className" onchange="classChanged()">
 <option value="">Select Class</option>
 </select>
+
 <input id="section" placeholder="Section">
-<input id="seatNumber" placeholder="Seat Number">
-<input id="grNumber" placeholder="GR Number">
-<input id="phoneNumber" placeholder="Phone Number">
-<input id="caste" placeholder="Caste">
 </div>
-<button onclick="addStudent()">Save Student</button>
+
+<div class="seat-box">
+<strong>Separate Seat Number Allotment</strong>
+<input id="seatNumber" placeholder="Seat Number" readonly>
+<button type="button" onclick="allotSeat()">Allot Seat Number</button>
+<p id="seatMessage"></p>
+</div>
+
+<button onclick="saveStudent()" id="saveButton">Save Student</button>
+<button onclick="cancelEdit()" id="cancelButton" style="display:none;background:#475569">
+Cancel Edit
+</button>
+
 <p id="addMessage"></p>
 </div>
 
 <div class="panel">
 <h2>Student Records</h2>
-<input id="searchStudent" placeholder="Search student name, father name, class or GR number" oninput="renderStudents()">
+<input id="searchStudent"
+placeholder="Search GR Number, student name, father name or class"
+oninput="renderStudents()">
+
 <div class="table-wrap">
 <table>
 <thead>
 <tr>
-<th>#</th><th>Student Name</th><th>Father Name</th>
-<th>Class</th><th>Section</th><th>Seat No.</th>
-<th>GR Number</th><th>Action</th>
+<th>#</th>
+<th>GR Number</th>
+<th>Student Name</th>
+<th>Father Name</th>
+<th>Caste</th>
+<th>Date of Birth</th>
+<th>Phone</th>
+<th>Class</th>
+<th>Section</th>
+<th>Seat No.</th>
+<th>Action</th>
 </tr>
 </thead>
 <tbody id="studentRows">
-<tr><td colspan="8">Loading...</td></tr>
+<tr><td colspan="11">Loading...</td></tr>
 </tbody>
 </table>
 </div>
@@ -154,6 +178,8 @@ const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let students=[];
 let classes=[];
+let editingStudentId=null;
+let allottedSeat=null;
 
 function showMessage(id,text,color="red"){
 const el=document.getElementById(id);
@@ -277,6 +303,8 @@ document.getElementById("totalClasses").innerText=classes.length;
 
 const list=document.getElementById("classList");
 const select=document.getElementById("className");
+const oldValue=select.value;
+
 select.innerHTML='<option value="">Select Class</option>';
 
 if(classes.length===0){
@@ -294,6 +322,10 @@ option.value=c.class_name;
 option.textContent=c.class_name;
 select.appendChild(option);
 });
+
+if(oldValue && classes.some(c=>c.class_name===oldValue)){
+select.value=oldValue;
+}
 }
 
 async function addClass(){
@@ -321,13 +353,44 @@ showMessage("classMessage","Class successfully add ho gayi.","green");
 await loadClasses();
 }
 
+function classChanged(){
+document.getElementById("seatNumber").value="";
+allottedSeat=null;
+showMessage("seatMessage","Nayi class ke liye seat number allot karein.","#087e83");
+}
+
+function allotSeat(){
+const selectedClass=document.getElementById("className").value;
+
+if(!selectedClass){
+showMessage("seatMessage","Pehle class select karein.");
+return;
+}
+
+const usedNumbers=students
+.filter(s=>(s.class_name||s.class)===selectedClass)
+.map(s=>parseInt(s.seat_number,10))
+.filter(n=>Number.isFinite(n));
+
+let nextNumber=10001;
+
+while(usedNumbers.includes(nextNumber)){
+nextNumber++;
+}
+
+allottedSeat=String(nextNumber);
+document.getElementById("seatNumber").value=allottedSeat;
+
+showMessage("seatMessage","Seat Number "+allottedSeat+" allot ho gaya.","green");
+}
+
 async function loadStudents(){
 const {data,error}=await client.from("students")
 .select("*").order("created_at",{ascending:false});
 
 if(error){
 document.getElementById("studentRows").innerHTML=
-"<tr><td colspan='8'>Students load nahi hue: "+escapeHTML(error.message)+"</td></tr>";
+"<tr><td colspan='11'>Students load nahi hue: "+escapeHTML(error.message)+"</td></tr>";
 showMessage("notice","Students error: "+error.message);
 return;
 }
@@ -342,8 +405,8 @@ const search=document.getElementById("searchStudent").value.toLowerCase();
 
 const filtered=students.filter(s=>{
 const text=[
-s.student_name,s.father_name,s.class_name,s.class,
-s.section,s.gr_number,s.seat_number
+s.gr_number,s.student_name,s.father_name,s.caste,
+s.phone_number,s.class_name,s.class,s.section,s.seat_number
 ].join(" ").toLowerCase();
 return text.includes(search);
 });
@@ -351,68 +414,143 @@ return text.includes(search);
 const tbody=document.getElementById("studentRows");
 
 if(filtered.length===0){
-tbody.innerHTML="<tr><td colspan='8'>No students found.</td></tr>";
+tbody.innerHTML="<tr><td colspan='11'>No students found.</td></tr>";
 return;
 }
 
 tbody.innerHTML=filtered.map((s,i)=>`
 <tr>
 <td>${i+1}</td>
+<td>${escapeHTML(s.gr_number)}</td>
 <td>${escapeHTML(s.student_name)}</td>
 <td>${escapeHTML(s.father_name)}</td>
+<td>${escapeHTML(s.caste)}</td>
+<td>${escapeHTML(s.date_of_birth)}</td>
+<td>${escapeHTML(s.phone_number)}</td>
 <td>${escapeHTML(s.class_name||s.class)}</td>
 <td>${escapeHTML(s.section)}</td>
 <td>${escapeHTML(s.seat_number)}</td>
-<td>${escapeHTML(s.gr_number)}</td>
-<td><button class="small-btn" onclick="deleteStudent('${s.id}')">Delete</button></td>
+<td>
+<button class="small-btn edit-btn" onclick="editStudent('${s.id}')">Edit</button>
+<button class="small-btn delete-btn" onclick="deleteStudent('${s.id}')">Delete</button>
+</td>
 </tr>
 `).join("");
 }
 
-async function addStudent(){
+async function saveStudent(){
+const gr_number=document.getElementById("grNumber").value.trim();
 const student_name=document.getElementById("studentName").value.trim();
 const father_name=document.getElementById("fatherName").value.trim();
+const classValue=document.getElementById("className").value;
 
-if(!student_name||!father_name){
-showMessage("addMessage","Student Name aur Father Name zaroori hain.");
+if(!gr_number||!student_name||!father_name||!classValue){
+showMessage("addMessage","GR Number, Student Name, Father Name aur Class zaroori hain.");
 return;
 }
 
-const classValue=document.getElementById("className").value;
+const seat=document.getElementById("seatNumber").value;
 
-if(!classValue){
-showMessage("addMessage","Pehle class select karein.");
+if(!seat){
+showMessage("addMessage","Pehle alag se Seat Number allot karein.");
+return;
+}
+
+const duplicateGR=students.some(s=>
+String(s.gr_number||"").toLowerCase()===gr_number.toLowerCase()
+&&s.id!==editingStudentId
+);
+
+if(duplicateGR){
+showMessage("addMessage","Ye GR Number pehle se mojood hai.");
+return;
+}
+
+const duplicateSeat=students.some(s=>
+String(s.seat_number||"")===seat
+&&(s.class_name||s.class)===classValue
+&&s.id!==editingStudentId
+);
+
+if(duplicateSeat){
+showMessage("addMessage","Is class mein ye Seat Number pehle se use ho raha hai. Dobara allot karein.");
 return;
 }
 
 const record={
+gr_number:gr_number,
 student_name:student_name,
 father_name:father_name,
+caste:document.getElementById("caste").value.trim()||null,
 date_of_birth:document.getElementById("dob").value||null,
-gender:document.getElementById("gender").value||null,
+phone_number:document.getElementById("phoneNumber").value.trim()||null,
 class_name:classValue,
 class:classValue,
 section:document.getElementById("section").value.trim()||null,
-seat_number:document.getElementById("seatNumber").value.trim()||null,
-gr_number:document.getElementById("grNumber").value.trim()||null,
-phone_number:document.getElementById("phoneNumber").value.trim()||null,
-caste:document.getElementById("caste").value.trim()||null
+seat_number:seat
 };
 
-const {error}=await client.from("students").insert([record]);
+let result;
 
-if(error){
-showMessage("addMessage","Student save nahi hua: "+error.message);
+if(editingStudentId){
+result=await client.from("students").update(record).eq("id",editingStudentId);
+}else{
+result=await client.from("students").insert([record]);
+}
+
+if(result.error){
+showMessage("addMessage","Record save nahi hua: "+result.error.message);
 return;
 }
 
-showMessage("addMessage","Student successfully save ho gaya.","green");
+showMessage("addMessage",editingStudentId?"Student update ho gaya.":"Student successfully save ho gaya.","green");
 
-document.querySelectorAll(
-"#studentName,#fatherName,#dob,#gender,#className,#section,#seatNumber,#grNumber,#phoneNumber,#caste"
-).forEach(el=>el.value="");
-
+cancelEdit();
 await loadStudents();
+}
+
+function editStudent(id){
+const s=students.find(x=>String(x.id)===String(id));
+if(!s)return;
+
+editingStudentId=id;
+
+document.getElementById("formTitle").innerText="Edit Student";
+document.getElementById("saveButton").innerText="Update Student";
+document.getElementById("cancelButton").style.display="block";
+
+document.getElementById("grNumber").value=s.gr_number||"";
+document.getElementById("studentName").value=s.student_name||"";
+document.getElementById("fatherName").value=s.father_name||"";
+document.getElementById("caste").value=s.caste||"";
+document.getElementById("dob").value=s.date_of_birth||"";
+document.getElementById("phoneNumber").value=s.phone_number||"";
+document.getElementById("className").value=s.class_name||s.class||"";
+document.getElementById("section").value=s.section||"";
+document.getElementById("seatNumber").value=s.seat_number||"";
+
+allottedSeat=s.seat_number||null;
+
+showMessage("seatMessage","Existing seat number. Class change karne par naya allot karein.","#087e83");
+
+document.getElementById("formTitle").scrollIntoView({behavior:"smooth"});
+}
+
+function cancelEdit(){
+editingStudentId=null;
+allottedSeat=null;
+
+[
+"grNumber","studentName","fatherName","caste","dob",
+"phoneNumber","className","section","seatNumber"
+].forEach(id=>document.getElementById(id).value="");
+
+document.getElementById("formTitle").innerText="Student Admission";
+document.getElementById("saveButton").innerText="Save Student";
+document.getElementById("cancelButton").style.display="none";
+
+showMessage("seatMessage","");
+showMessage("addMessage","");
 }
 
 async function deleteStudent(id){
