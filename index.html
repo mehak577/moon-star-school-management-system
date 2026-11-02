@@ -3,46 +3,135 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Moon Star School Management System</title>
+<title>Moon Star Public High School - Management</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+:root{
+--navy:#102a43;
+--teal:#087e8b;
+--light:#f3f7fa;
+--ink:#243b53;
+--muted:#627d98;
+--line:#d9e2ec;
+--white:#fff;
+--red:#c0392b;
+--green:#16845b;
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial;background:#f1f5f9;color:#1e293b}
-header{background:#102a43;color:white;padding:22px;text-align:center}
-header h1{margin:0;font-size:25px}
-header p{color:#b8dce0}
-.login{max-width:380px;margin:45px auto;background:white;padding:25px;border-radius:12px;box-shadow:0 5px 20px #0002}
-h2{color:#087e83}
-.login h2{text-align:center}
-input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #ddd;border-radius:6px}
-button{background:#087e83;color:white;border:0;font-weight:bold;cursor:pointer}
-button:hover{opacity:.9}
-a{color:#087e83;cursor:pointer}
-#message,#resetMessage,#addMessage,#classMessage{text-align:center;font-size:14px}
-#resetBox,#dashboard{display:none}
-#dashboard{max-width:1150px;margin:25px auto;padding:15px}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.topbar button{width:auto;padding:10px 20px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin:20px 0}
-.card{background:white;padding:20px;border-radius:10px;box-shadow:0 3px 12px #0001;text-align:center}
-.card h3{color:#087e83;margin:0 0 10px}
-.card strong{font-size:28px}
-.panel{background:white;padding:20px;border-radius:10px;margin:20px 0;box-shadow:0 3px 12px #0001}
-.panel h2{text-align:left}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
-table{width:100%;border-collapse:collapse;min-width:850px}
-th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}
-th{background:#102a43;color:white}
-.table-wrap{overflow-x:auto}
-.small-btn{width:auto;padding:7px 12px;margin:2px}
-.delete-btn{background:#b42318}
-.edit-btn{background:#2563eb}
-.status{padding:10px;background:#e0f2f1;border-radius:6px;margin:10px 0}
-.class-item{padding:12px;background:#f1f5f9;margin:7px 0;border-radius:6px}
-.seat-box{background:#e0f2f1;padding:12px;border-radius:8px;margin:10px 0}
-.seat-box input{background:#f8fafc;font-weight:bold;color:#087e83}
-footer{text-align:center;padding:20px;color:#64748b}
+body{
+margin:0;
+background:var(--light);
+font-family:Arial,Helvetica,sans-serif;
+color:var(--ink);
+}
+header{
+background:linear-gradient(120deg,var(--navy),var(--teal));
+color:white;
+padding:22px 16px;
+text-align:center;
+}
+header h1{margin:0 0 6px;font-size:25px}
+header p{margin:0;font-size:14px}
+.wrap{max-width:1180px;margin:22px auto;padding:0 14px}
+.panel{
+background:white;
+border:1px solid var(--line);
+border-radius:12px;
+padding:18px;
+margin-bottom:18px;
+box-shadow:0 3px 12px rgba(16,42,67,.05);
+}
+h2{margin:0 0 15px;color:var(--navy);font-size:20px}
+h3{margin:0 0 12px;color:var(--navy);font-size:17px}
+label{display:block;font-weight:700;font-size:13px;margin:10px 0 5px}
+input,select{
+width:100%;
+padding:11px;
+border:1px solid #bcccdc;
+border-radius:7px;
+font-size:15px;
+background:white;
+color:var(--ink);
+}
+button{
+border:0;
+border-radius:7px;
+padding:10px 15px;
+background:var(--teal);
+color:white;
+font-weight:700;
+cursor:pointer;
+font-size:14px;
+margin:6px 5px 0 0;
+}
+button:hover{filter:brightness(.94)}
+button.secondary{background:var(--navy)}
+button.danger{background:var(--red)}
+button.light{
+background:#e6f2f4;
+color:var(--navy);
+border:1px solid #b7dadd;
+}
+button:disabled{opacity:.55;cursor:not-allowed}
+.grid{
+display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+gap:14px;
+}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stat{
+background:#f7fbfc;
+border:1px solid var(--line);
+border-radius:10px;
+padding:16px;
+}
+.stat strong{
+display:block;
+font-size:28px;
+color:var(--teal);
+margin-top:5px;
+}
+.nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.nav button{margin:0}
+.hidden{display:none!important}
+.msg{
+padding:10px 12px;
+border-radius:7px;
+margin:10px 0;
+font-size:14px;
+white-space:pre-wrap;
+}
+.success{background:#e7f6ef;color:#116342;border:1px solid #b7e4ce}
+.error{background:#fff0ef;color:#922b21;border:1px solid #f2c2bd}
+.info{background:#eaf4fb;color:#174a6e;border:1px solid #c7dfef}
+.tablebox{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;min-width:700px;background:white}
+th,td{
+padding:10px;
+border-bottom:1px solid var(--line);
+text-align:left;
+font-size:13px;
+}
+th{background:#edf5f7;color:var(--navy)}
+.row-actions{white-space:nowrap}
+.row-actions button{padding:7px 9px;font-size:12px}
+.form-actions{margin-top:12px}
+.muted{color:var(--muted);font-size:13px}
+.topline{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+flex-wrap:wrap;
+}
+#loginBox{max-width:460px;margin:35px auto}
+.footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+@media(max-width:700px){
+.grid,.grid.two{grid-template-columns:1fr}
+header h1{font-size:21px}
+.panel{padding:14px}
+}
 </style>
 </head>
 
@@ -53,564 +142,571 @@ footer{text-align:center;padding:20px;color:#64748b}
 <p>Khanwahan | School Management System</p>
 </header>
 
-<div class="login" id="loginBox">
+<div class="wrap">
+
+<section id="loginBox" class="panel">
 <h2>Admin Login</h2>
-<input type="email" id="email" placeholder="Admin Email">
-<input type="password" id="password" placeholder="Password">
-<button onclick="adminLogin()">Login</button>
-<p style="text-align:center"><a onclick="forgotPassword()">Forgot Password?</a></p>
-<p id="message"></p>
-</div>
+<div id="loginMsg"></div>
 
-<div class="login" id="resetBox">
-<h2>Reset Password</h2>
-<input type="password" id="newPassword" placeholder="New Password">
-<input type="password" id="confirmPassword" placeholder="Confirm Password">
-<button onclick="updatePassword()">Update Password</button>
-<p id="resetMessage"></p>
-</div>
+<form id="loginForm">
+<label>Email</label>
+<input id="loginEmail" type="email" required
+autocomplete="username"
+value="ashfaque.thebo@gmail.com">
 
-<div id="dashboard">
+<label>Password</label>
+<input id="loginPassword" type="password"
+required autocomplete="current-password">
 
-<div class="topbar">
-<div>
-<h2 style="margin:0">Admin Dashboard</h2>
-<p id="adminEmail"></p>
-</div>
-<button onclick="logout()">Logout</button>
-</div>
-
-<div id="notice" class="status">Loading school data...</div>
-
-<div class="cards">
-<div class="card"><h3>Total Students</h3><strong id="totalStudents">0</strong></div>
-<div class="card"><h3>Total Classes</h3><strong id="totalClasses">0</strong></div>
-<div class="card"><h3>Total Exams</h3><strong id="totalExams">0</strong></div>
-</div>
-
-<div class="panel">
-<h2>Classes Management</h2>
-<input type="text" id="newClassName" placeholder="Enter Class Name">
-<button onclick="addClass()">Add Class</button>
-<p id="classMessage"></p>
-<h3>Available Classes</h3>
-<div id="classList">Loading classes...</div>
-</div>
-
-<div class="panel">
-<h2 id="formTitle">Student Admission</h2>
-
-<div class="grid">
-<input id="grNumber" placeholder="GR Number">
-<input id="studentName" placeholder="Student Name">
-<input id="fatherName" placeholder="Father Name">
-<input id="caste" placeholder="Caste">
-<input id="dob" type="date">
-<input id="phoneNumber" placeholder="Phone Number">
-
-<select id="className" onchange="classChanged()">
-<option value="">Select Class</option>
-</select>
-
-<input id="section" placeholder="Section">
-</div>
-
-<div class="seat-box">
-<strong>Separate Seat Number Allotment</strong>
-<input id="seatNumber" placeholder="Seat Number" readonly>
-<button type="button" onclick="allotSeat()">Allot Seat Number</button>
-<p id="seatMessage"></p>
-</div>
-
-<button onclick="saveStudent()" id="saveButton">Save Student</button>
-<button onclick="cancelEdit()" id="cancelButton" style="display:none;background:#475569">
-Cancel Edit
+<button type="submit">Login</button>
+<button type="button" class="light" id="forgotBtn">
+Forgot Password?
 </button>
+</form>
 
-<p id="addMessage"></p>
+<div id="forgotBox" class="hidden">
+<hr>
+<h3>Reset Password</h3>
+<label>Admin Email</label>
+<input id="resetEmail" type="email"
+value="ashfaque.thebo@gmail.com">
+<button id="sendResetBtn" type="button">Send Reset Link</button>
 </div>
 
-<div class="panel">
-<h2>Student Records</h2>
-<input id="searchStudent"
-placeholder="Search GR Number, student name, father name or class"
-oninput="renderStudents()">
+<div id="newPasswordBox" class="hidden">
+<hr>
+<h3>Set New Password</h3>
+<label>New Password</label>
+<input id="newPassword" type="password" minlength="6">
+<button id="savePasswordBtn" type="button">Update Password</button>
+</div>
+</section>
 
-<div class="table-wrap">
+<section id="appBox" class="hidden">
+
+<div class="panel topline">
+<div>
+<h2 style="margin-bottom:4px">Admin Dashboard</h2>
+<span class="muted" id="signedInAs"></span>
+</div>
+<button class="danger" id="logoutBtn">Logout</button>
+</div>
+
+<div class="grid" style="margin-bottom:18px">
+<div class="stat">
+Total Students
+<strong id="studentCount">0</strong>
+</div>
+<div class="stat">
+Total Classes
+<strong id="classCount">0</strong>
+</div>
+<div class="stat">
+Total Exams
+<strong id="examCount">0</strong>
+</div>
+</div>
+
+<div class="nav">
+<button data-page="dashboardPage" class="secondary">Dashboard</button>
+<button data-page="classesPage">Classes</button>
+<button data-page="admissionPage">Student Admission</button>
+<button data-page="studentsPage">Student List</button>
+<button data-page="seatsPage">Seat Number Allotment</button>
+<button data-page="examsPage">Exams</button>
+</div>
+
+<div id="globalMsg"></div>
+<section id="dashboardPage" class="page panel">
+<h2>Welcome Admin!</h2>
+<p>School records loaded. Use the sections above to manage classes, students, seat numbers and exams.</p>
+<div class="msg info">
+Seat numbers are NOT entered during admission. Select a class in Seat Number Allotment, enter that class's first number, and remaining numbers will be assigned automatically.
+</div>
+</section>
+
+<section id="classesPage" class="page panel hidden">
+<h2>Class Management</h2>
+
+<form id="classForm" class="grid two">
+<div>
+<label>Class Name</label>
+<input id="className" placeholder="Example: Nursery" required>
+</div>
+<div style="align-self:end">
+<button type="submit">Add Class</button>
+</div>
+</form>
+
+<div id="classesMsg"></div>
+
+<div class="tablebox">
 <table>
 <thead>
 <tr>
 <th>#</th>
-<th>GR Number</th>
-<th>Student Name</th>
-<th>Father Name</th>
-<th>Caste</th>
-<th>Date of Birth</th>
-<th>Phone</th>
-<th>Class</th>
-<th>Section</th>
-<th>Seat No.</th>
+<th>Class Name</th>
+<th>Created</th>
 <th>Action</th>
 </tr>
 </thead>
-<tbody id="studentRows">
-<tr><td colspan="11">Loading...</td></tr>
-</tbody>
+<tbody id="classesBody"></tbody>
 </table>
 </div>
+</section>
+
+<section id="admissionPage" class="page panel hidden">
+<h2 id="studentFormTitle">Student Admission</h2>
+
+<div class="msg info">
+Seat Number yahan nahi poocha jayega. Seat number baad mein alag section se allot hoga.
 </div>
 
-<div class="panel">
-<h2>Exams</h2>
-<div id="examList">Loading exams...</div>
+<form id="studentForm">
+<input type="hidden" id="editStudentId">
+
+<div class="grid two">
+
+<div>
+<label>Student Name *</label>
+<input id="studentName" required>
+</div>
+
+<div>
+<label>Father Name *</label>
+<input id="fatherName" required>
+</div>
+
+<div>
+<label>GR Number</label>
+<input id="grNumber">
+</div>
+
+<div>
+<label>Caste</label>
+<input id="caste">
+</div>
+
+<div>
+<label>Date of Birth</label>
+<input id="dob" type="date">
+</div>
+
+<div>
+<label>Gender</label>
+<select id="gender">
+<option value="">Select Gender</option>
+<option>Male</option>
+<option>Female</option>
+</select>
+</div>
+
+<div>
+<label>Phone Number</label>
+<input id="phone" type="tel">
+</div>
+
+<div>
+<label>Class *</label>
+<select id="studentClass" required>
+<option value="">Select Class</option>
+</select>
+</div>
+
+<div>
+<label>Section</label>
+<input id="section" placeholder="A / B / C">
 </div>
 
 </div>
 
-<footer>© 2026 Moon Star School Management System</footer>
+<div class="form-actions">
+<button type="submit" id="saveStudentBtn">Save Student</button>
+<button type="button" class="light hidden" id="cancelEditBtn">
+Cancel Edit
+</button>
+</div>
+</form>
+
+<div id="admissionMsg"></div>
+</section>
+
+<section id="studentsPage" class="page panel hidden">
+
+<div class="topline">
+<h2>Student Records</h2>
+<button id="refreshStudentsBtn" class="light">Refresh</button>
+</div>
+
+<label>Search Student</label>
+<input id="studentSearch"
+placeholder="Search by student name, father name, GR, class or seat number">
+
+<div class="tablebox">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Student Name</th>
+<th>Father Name</th>
+<th>GR Number</th>
+<th>Class</th>
+<th>Section</th>
+<th>Seat Number</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="studentsBody"></tbody>
+</table>
+</div>
+
+<div id="studentsMsg"></div>
+</section>
+
+<section id="seatsPage" class="page panel hidden">
+
+<h2>Seat Number Allotment</h2>
+
+<div class="msg info">
+Har class ka starting number alag se likhein.
+Misal: Nursery 10001, KG 20001.
+Students ka order record banne ki date ke mutabiq hoga.
+</div>
+
+<div class="grid two">
+
+<div>
+<label>Select Class</label>
+<select id="seatClass">
+<option value="">Select Class</option>
+</select>
+</div>
+
+<div>
+<label>Starting Seat Number</label>
+<input id="startingSeat" type="number"
+min="1" step="1" placeholder="Example: 10001">
+</div>
+
+</div>
+
+<button id="loadSeatStudentsBtn" class="secondary">
+Show Class Students
+</button>
+
+<button id="allotSeatsBtn">
+Allot Seat Numbers
+</button>
+
+<div id="seatsMsg"></div>
+
+<div class="tablebox">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Student Name</th>
+<th>Father Name</th>
+<th>GR Number</th>
+<th>Current Seat Number</th>
+<th>New Seat Number</th>
+</tr>
+</thead>
+<tbody id="seatsBody"></tbody>
+</table>
+</div>
+
+</section>
+
+<section id="examsPage" class="page panel hidden">
+
+<h2>Exam Management</h2>
+
+<form id="examForm" class="grid two">
+
+<div>
+<label>Exam Name</label>
+<input id="examName" required
+placeholder="Annual Examination">
+</div>
+
+<div>
+<label>Exam Date</label>
+<input id="examDate" type="date">
+</div>
+
+<div>
+<button type="submit">Add Exam</button>
+</div>
+
+</form>
+
+<div id="examsMsg"></div>
+
+<div class="tablebox">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Exam Name</th>
+<th>Exam Date</th>
+<th>Created</th>
+</tr>
+</thead>
+<tbody id="examsBody"></tbody>
+</table>
+</div>
+
+</section>
+
+</section>
+</div>
+
+<div class="footer">
+Moon Star Public High School | Management System
+</div>
 
 <script>
-const SUPABASE_URL="https://tglaxwhmfqtrdbtxdyqf.supabase.co";
-const SUPABASE_KEY="sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
-const ADMIN_EMAIL="ashfaque.thebo@gmail.com";
+  (() => {
 
-const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const SUPABASE_URL = "https://tglaxwhmfqtrdbtxdyqf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
+const ADMIN_EMAIL = "ashfaque.thebo@gmail.com";
 
-let students=[];
-let classes=[];
-let editingStudentId=null;
-let allottedSeat=null;
-
-function showMessage(id,text,color="red"){
-const el=document.getElementById(id);
-el.style.color=color;
-el.innerText=text;
-}
-
-function showLogin(){
-document.getElementById("loginBox").style.display="block";
-document.getElementById("resetBox").style.display="none";
-document.getElementById("dashboard").style.display="none";
-}
-
-async function adminLogin(){
-const email=document.getElementById("email").value.trim().toLowerCase();
-const password=document.getElementById("password").value;
-
-if(!email||!password){
-showMessage("message","Email aur Password enter karein.");
-return;
-}
-
-const {data,error}=await client.auth.signInWithPassword({email,password});
-
-if(error){
-showMessage("message",error.message);
-return;
-}
-
-if(data.user.email.toLowerCase()!==ADMIN_EMAIL){
-await client.auth.signOut();
-showMessage("message","Unauthorized Admin Account.");
-return;
-}
-
-await showDashboard(data.user);
-}
-
-async function forgotPassword(){
-const email=document.getElementById("email").value.trim();
-
-if(!email){
-showMessage("message","Pehle Admin Email enter karein.");
-return;
-}
-
-const {error}=await client.auth.resetPasswordForEmail(email,{
-redirectTo:window.location.origin+window.location.pathname
-});
-
-if(error){
-showMessage("message",error.message);
-return;
-}
-
-showMessage("message","Password reset link Gmail par bhej diya gaya.","green");
-}
-
-async function updatePassword(){
-const password=document.getElementById("newPassword").value;
-const confirm=document.getElementById("confirmPassword").value;
-
-if(password.length<8){
-showMessage("resetMessage","Password kam az kam 8 characters ka ho.");
-return;
-}
-
-if(password!==confirm){
-showMessage("resetMessage","Passwords match nahi karte.");
-return;
-}
-
-const {error}=await client.auth.updateUser({password});
-
-if(error){
-showMessage("resetMessage",error.message);
-return;
-}
-
-showMessage("resetMessage","Password successfully updated!","green");
-
-setTimeout(async()=>{
-await client.auth.signOut();
-showLogin();
-},2000);
-}
-
-async function showDashboard(user){
-if(!user||user.email.toLowerCase()!==ADMIN_EMAIL){
-await client.auth.signOut();
-showLogin();
-return;
-}
-
-document.getElementById("loginBox").style.display="none";
-document.getElementById("resetBox").style.display="none";
-document.getElementById("dashboard").style.display="block";
-document.getElementById("adminEmail").innerText=user.email;
-
-await loadAllData();
-}
-
-async function loadAllData(){
-document.getElementById("notice").innerText="Loading school records...";
-await loadClasses();
-await loadStudents();
-await loadExams();
-document.getElementById("notice").innerText="School records loaded.";
-}
-
-async function loadClasses(){
-const {data,error}=await client.from("classes").select("*").order("created_at");
-
-if(error){
-document.getElementById("classList").innerText="Classes load nahi huin: "+error.message;
-return;
-}
-
-classes=data||[];
-document.getElementById("totalClasses").innerText=classes.length;
-
-const list=document.getElementById("classList");
-const select=document.getElementById("className");
-const oldValue=select.value;
-
-select.innerHTML='<option value="">Select Class</option>';
-
-if(classes.length===0){
-list.innerText="No classes found.";
-return;
-}
-
-list.innerHTML=classes.map(c=>
-`<div class="class-item">${escapeHTML(c.class_name)}</div>`
-).join("");
-
-classes.forEach(c=>{
-const option=document.createElement("option");
-option.value=c.class_name;
-option.textContent=c.class_name;
-select.appendChild(option);
-});
-
-if(oldValue && classes.some(c=>c.class_name===oldValue)){
-select.value=oldValue;
-}
-}
-
-async function addClass(){
-const name=document.getElementById("newClassName").value.trim();
-
-if(!name){
-showMessage("classMessage","Class name enter karein.");
-return;
-}
-
-if(classes.some(c=>c.class_name.toLowerCase()===name.toLowerCase())){
-showMessage("classMessage","Ye class pehle se mojood hai.");
-return;
-}
-
-const {error}=await client.from("classes").insert([{class_name:name}]);
-
-if(error){
-showMessage("classMessage","Class save nahi hui: "+error.message);
-return;
-}
-
-document.getElementById("newClassName").value="";
-showMessage("classMessage","Class successfully add ho gayi.","green");
-await loadClasses();
-}
-
-function classChanged(){
-document.getElementById("seatNumber").value="";
-allottedSeat=null;
-showMessage("seatMessage","Nayi class ke liye seat number allot karein.","#087e83");
-}
-
-function allotSeat(){
-const selectedClass=document.getElementById("className").value;
-
-if(!selectedClass){
-showMessage("seatMessage","Pehle class select karein.");
-return;
-}
-
-const usedNumbers=students
-.filter(s=>(s.class_name||s.class)===selectedClass)
-.map(s=>parseInt(s.seat_number,10))
-.filter(n=>Number.isFinite(n));
-
-let nextNumber=10001;
-
-while(usedNumbers.includes(nextNumber)){
-nextNumber++;
-}
-
-allottedSeat=String(nextNumber);
-document.getElementById("seatNumber").value=allottedSeat;
-
-showMessage("seatMessage","Seat Number "+allottedSeat+" allot ho gaya.","green");
-}
-
-async function loadStudents(){
-const {data,error}=await client.from("students")
-.select("*").order("created_at",{ascending:false});
-
-if(error){
-document.getElementById("studentRows").innerHTML=
-"<tr><td colspan='11'>Students load nahi hue: "+escapeHTML(error.message)+"</td></tr>";
-showMessage("notice","Students error: "+error.message);
-return;
-}
-
-students=data||[];
-document.getElementById("totalStudents").innerText=students.length;
-renderStudents();
-}
-
-function renderStudents(){
-const search=document.getElementById("searchStudent").value.toLowerCase();
-
-const filtered=students.filter(s=>{
-const text=[
-s.gr_number,s.student_name,s.father_name,s.caste,
-s.phone_number,s.class_name,s.class,s.section,s.seat_number
-].join(" ").toLowerCase();
-return text.includes(search);
-});
-
-const tbody=document.getElementById("studentRows");
-
-if(filtered.length===0){
-tbody.innerHTML="<tr><td colspan='11'>No students found.</td></tr>";
-return;
-}
-
-tbody.innerHTML=filtered.map((s,i)=>`
-<tr>
-<td>${i+1}</td>
-<td>${escapeHTML(s.gr_number)}</td>
-<td>${escapeHTML(s.student_name)}</td>
-<td>${escapeHTML(s.father_name)}</td>
-<td>${escapeHTML(s.caste)}</td>
-<td>${escapeHTML(s.date_of_birth)}</td>
-<td>${escapeHTML(s.phone_number)}</td>
-<td>${escapeHTML(s.class_name||s.class)}</td>
-<td>${escapeHTML(s.section)}</td>
-<td>${escapeHTML(s.seat_number)}</td>
-<td>
-<button class="small-btn edit-btn" onclick="editStudent('${s.id}')">Edit</button>
-<button class="small-btn delete-btn" onclick="deleteStudent('${s.id}')">Delete</button>
-</td>
-</tr>
-`).join("");
-}
-
-async function saveStudent(){
-const gr_number=document.getElementById("grNumber").value.trim();
-const student_name=document.getElementById("studentName").value.trim();
-const father_name=document.getElementById("fatherName").value.trim();
-const classValue=document.getElementById("className").value;
-
-if(!gr_number||!student_name||!father_name||!classValue){
-showMessage("addMessage","GR Number, Student Name, Father Name aur Class zaroori hain.");
-return;
-}
-
-const seat=document.getElementById("seatNumber").value;
-
-if(!seat){
-showMessage("addMessage","Pehle alag se Seat Number allot karein.");
-return;
-}
-
-const duplicateGR=students.some(s=>
-String(s.gr_number||"").toLowerCase()===gr_number.toLowerCase()
-&&s.id!==editingStudentId
+const db = window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_PUBLISHABLE_KEY
 );
 
-if(duplicateGR){
-showMessage("addMessage","Ye GR Number pehle se mojood hai.");
-return;
-}
+let students = [];
+let classes = [];
+let exams = [];
+let seatPreview = [];
 
-const duplicateSeat=students.some(s=>
-String(s.seat_number||"")===seat
-&&(s.class_name||s.class)===classValue
-&&s.id!==editingStudentId
-);
+const $ = id => document.getElementById(id);
 
-if(duplicateSeat){
-showMessage("addMessage","Is class mein ye Seat Number pehle se use ho raha hai. Dobara allot karein.");
-return;
-}
+const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#39;"
+}[c]));
 
-const record={
-gr_number:gr_number,
-student_name:student_name,
-father_name:father_name,
-caste:document.getElementById("caste").value.trim()||null,
-date_of_birth:document.getElementById("dob").value||null,
-phone_number:document.getElementById("phoneNumber").value.trim()||null,
-class_name:classValue,
-class:classValue,
-section:document.getElementById("section").value.trim()||null,
-seat_number:seat
+const showMsg = (id,text,type="info") => {
+$(id).innerHTML = text
+? `<div class="msg ${type}">${esc(text)}</div>`
+: "";
 };
 
-let result;
+const niceDate = value =>
+value ? new Date(value).toLocaleDateString() : "—";
 
-if(editingStudentId){
-result=await client.from("students").update(record).eq("id",editingStudentId);
-}else{
-result=await client.from("students").insert([record]);
+const onlyAdmin = email =>
+(email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+function showApp(session) {
+$("loginBox").classList.add("hidden");
+$("appBox").classList.remove("hidden");
+$("signedInAs").textContent =
+"Signed in: " + (session.user.email || "");
+loadAll();
 }
 
-if(result.error){
-showMessage("addMessage","Record save nahi hua: "+result.error.message);
+function showLogin() {
+$("appBox").classList.add("hidden");
+$("loginBox").classList.remove("hidden");
+}
+
+async function loadAll() {
+
+showMsg("globalMsg","Loading school records…");
+
+const [s,c,e] = await Promise.all([
+
+db.from("students")
+.select("*")
+.order("created_at",{ascending:true}),
+
+db.from("classes")
+.select("*")
+.order("created_at",{ascending:true}),
+
+db.from("exams")
+.select("*")
+.order("created_at",{ascending:true})
+
+]);
+
+const errors = [s.error,c.error,e.error].filter(Boolean);
+
+if(errors.length) {
+showMsg(
+"globalMsg",
+errors.map(x=>x.message).join(" | "),
+"error"
+);
+}
+else {
+students = s.data || [];
+classes = c.data || [];
+exams = e.data || [];
+
+showMsg(
+"globalMsg",
+"School records loaded.",
+"success"
+);
+}
+
+renderAll();
+}
+
+function renderAll() {
+
+$("studentCount").textContent = students.length;
+$("classCount").textContent = classes.length;
+$("examCount").textContent = exams.length;
+
+renderClasses();
+renderStudents();
+renderExams();
+fillClassOptions();
+
+}
+
+function fillClassOptions() {
+
+const opts = classes.map(c =>
+`<option value="${esc(c.class_name)}">${esc(c.class_name)}</option>`
+).join("");
+
+const studentVal = $("studentClass").value;
+const seatVal = $("seatClass").value;
+
+$("studentClass").innerHTML =
+'<option value="">Select Class</option>' + opts;
+
+$("seatClass").innerHTML =
+'<option value="">Select Class</option>' + opts;
+
+if(classes.some(c=>c.class_name===studentVal))
+$("studentClass").value = studentVal;
+
+if(classes.some(c=>c.class_name===seatVal))
+$("seatClass").value = seatVal;
+
+}
+
+function renderClasses() {
+
+$("classesBody").innerHTML = classes.map((c,i)=>`
+<tr>
+<td>${i+1}</td>
+<td>${esc(c.class_name)}</td>
+<td>${niceDate(c.created_at)}</td>
+<td>
+<button class="danger"
+data-delete-class="${esc(c.id)}">
+Delete
+</button>
+</td>
+</tr>
+`).join("") ||
+'<tr><td colspan="4">No classes added yet.</td></tr>';
+
+}
+
+function renderStudents() {
+
+const q = $("studentSearch").value.trim().toLowerCase();
+
+const list = students.filter(s => [
+s.student_name,
+  // SEAT NUMBER ALLOTMENT
+
+async function loadSeatPreview(){
+
+const className = $("seatClass").value;
+
+if(!className){
+showMsg("seatsMsg","Please select a class.","error");
 return;
 }
 
-showMessage("addMessage",editingStudentId?"Student update ho gaya.":"Student successfully save ho gaya.","green");
-
-cancelEdit();
-await loadStudents();
-}
-
-function editStudent(id){
-const s=students.find(x=>String(x.id)===String(id));
-if(!s)return;
-
-editingStudentId=id;
-
-document.getElementById("formTitle").innerText="Edit Student";
-document.getElementById("saveButton").innerText="Update Student";
-document.getElementById("cancelButton").style.display="block";
-
-document.getElementById("grNumber").value=s.gr_number||"";
-document.getElementById("studentName").value=s.student_name||"";
-document.getElementById("fatherName").value=s.father_name||"";
-document.getElementById("caste").value=s.caste||"";
-document.getElementById("dob").value=s.date_of_birth||"";
-document.getElementById("phoneNumber").value=s.phone_number||"";
-document.getElementById("className").value=s.class_name||s.class||"";
-document.getElementById("section").value=s.section||"";
-document.getElementById("seatNumber").value=s.seat_number||"";
-
-allottedSeat=s.seat_number||null;
-
-showMessage("seatMessage","Existing seat number. Class change karne par naya allot karein.","#087e83");
-
-document.getElementById("formTitle").scrollIntoView({behavior:"smooth"});
-}
-
-function cancelEdit(){
-editingStudentId=null;
-allottedSeat=null;
-
-[
-"grNumber","studentName","fatherName","caste","dob",
-"phoneNumber","className","section","seatNumber"
-].forEach(id=>document.getElementById(id).value="");
-
-document.getElementById("formTitle").innerText="Student Admission";
-document.getElementById("saveButton").innerText="Save Student";
-document.getElementById("cancelButton").style.display="none";
-
-showMessage("seatMessage","");
-showMessage("addMessage","");
-}
-
-async function deleteStudent(id){
-if(!confirm("Kya aap is student ko delete karna chahte hain?"))return;
-
-const {error}=await client.from("students").delete().eq("id",id);
+const {data,error} = await db.from("students")
+.select("*")
+.eq("class_name",className)
+.order("created_at",{ascending:true});
 
 if(error){
-alert("Delete error: "+error.message);
+showMsg("seatsMsg",error.message,"error");
 return;
 }
 
-alert("Student deleted.");
-await loadStudents();
+seatPreview = data || [];
+
+const start = Number($("startingSeat").value);
+
+$("seatsBody").innerHTML = seatPreview.map((s,i)=>`
+<tr>
+<td>${i+1}</td>
+<td>${esc(s.student_name)}</td>
+<td>${esc(s.father_name)}</td>
+<td>${esc(s.gr_number||"—")}</td>
+<td>${esc(s.seat_number||"—")}</td>
+<td>${Number.isSafeInteger(start)&&start>0?start+i:"—"}</td>
+</tr>
+`).join("") ||
+'<tr><td colspan="6">No students found in this class.</td></tr>';
+
+showMsg(
+"seatsMsg",
+`${seatPreview.length} student(s) found in ${className}. Enter starting number and allot.`,
+"info"
+);
+
 }
 
-async function loadExams(){
-const {data,error}=await client.from("exams").select("*");
+$("loadSeatStudentsBtn").addEventListener("click",loadSeatPreview);
 
-if(error){
-document.getElementById("examList").innerText="Exams load nahi hue: "+error.message;
-return;
-}
-
-document.getElementById("totalExams").innerText=(data||[]).length;
-document.getElementById("examList").innerText=
-(data||[]).map(x=>x.exam_name).join(", ")||"No exams found.";
-}
-
-function escapeHTML(value){
-return String(value??"").replace(/[&<>"']/g,c=>({
-"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-}[c]));
-}
-
-async function logout(){
-await client.auth.signOut();
-students=[];
-showLogin();
-}
-
-client.auth.onAuthStateChange((event,session)=>{
-if(event==="PASSWORD_RECOVERY"){
-document.getElementById("loginBox").style.display="none";
-document.getElementById("dashboard").style.display="none";
-document.getElementById("resetBox").style.display="block";
-}
+$("seatClass").addEventListener("change",()=>{
+seatPreview=[];
+$("seatsBody").innerHTML="";
 });
 
-async function checkSession(){
-const {data}=await client.auth.getSession();
+$("startingSeat").addEventListener("input",()=>{
 
-if(data.session){
-await showDashboard(data.session.user);
-}else{
-showLogin();
-}
+const start = Number($("startingSeat").value);
+
+$("seatsBody").querySelectorAll("tr").forEach((tr,i)=>{
+
+const cell = tr.lastElementChild;
+
+if(cell && seatPreview[i]){
+cell.textContent =
+Number.isSafeInteger(start)&&start>0
+? String(start+i)
+: "—";
 }
 
-checkSession();
-</script>
-</body>
-</html>
+});
+
+});
+
+$("allotSeatsBtn").addEventListener("click",async()=>{
+
+const className = $("seatClass").value;
+const start = Number($("startingSeat").value);
+
+if(!className){
+showMsg("seatsMsg","Please select a class.","error");
+return;
+}
+
+if(!Number.isSafeInteger(start)||start<1){
+showMsg("seatsMsg","Starting seat number sahi likhein.","error");
+return;
+}
+
+if(!seat
