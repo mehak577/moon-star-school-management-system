@@ -4,82 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Moon Star School Management System</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *{box-sizing:border-box}
-
-body{
- margin:0;
- font-family:Arial;
- background:#f1f5f9;
- color:#1e293b;
-}
-
-header{
- background:#102a43;
- color:white;
- padding:25px;
- text-align:center;
-}
-
+body{margin:0;font-family:Arial;background:#f1f5f9;color:#1e293b}
+header{background:#102a43;color:white;padding:22px;text-align:center}
 header h1{margin:0;font-size:25px}
-header p{color:#b8dce0}
-
-.login{
- max-width:380px;
- margin:55px auto;
- background:white;
- padding:30px;
- border-radius:12px;
- box-shadow:0 5px 20px #0002;
-}
-
+header p{color:#b8dce0;margin-bottom:0}
+.login{max-width:380px;margin:45px auto;background:white;padding:25px;border-radius:12px;box-shadow:0 5px 20px #0002}
 h2{text-align:center;color:#087e83}
-
-input,button{
- width:100%;
- padding:13px;
- margin:10px 0;
- border:1px solid #ddd;
- border-radius:6px;
-}
-
-button{
- background:#087e83;
- color:white;
- border:0;
- font-weight:bold;
- cursor:pointer;
-}
-
-a{
- color:#087e83;
- cursor:pointer;
- text-decoration:none;
-}
-
-#message{
- text-align:center;
- font-size:14px;
-}
-
-#dashboard{
- display:none;
- max-width:600px;
- margin:40px auto;
- background:white;
- padding:30px;
- border-radius:12px;
- text-align:center;
-}
-
+input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #ddd;border-radius:6px}
+button{background:#087e83;color:white;border:0;font-weight:bold;cursor:pointer}
+button:hover{opacity:.9}
+a{color:#087e83;cursor:pointer}
+#message,#resetMessage{text-align:center;font-size:14px}
 #resetBox,#dashboard{display:none}
-
-footer{
- text-align:center;
- padding:20px;
- color:#64748b;
-}
+#dashboard{max-width:1150px;margin:25px auto;padding:15px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.topbar button{width:auto;padding:10px 20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin:20px 0}
+.card{background:white;padding:20px;border-radius:10px;box-shadow:0 3px 12px #0001;text-align:center}
+.card h3{color:#087e83;margin:0 0 10px}
+.card strong{font-size:28px}
+.panel{background:white;padding:20px;border-radius:10px;margin:20px 0;box-shadow:0 3px 12px #0001}
+.panel h2{text-align:left}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+table{width:100%;border-collapse:collapse;min-width:750px}
+th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}
+th{background:#102a43;color:white}
+.table-wrap{overflow-x:auto}
+.small-btn{width:auto;padding:7px 12px;background:#b42318}
+.secondary{background:#475569}
+.status{padding:10px;background:#e0f2f1;border-radius:6px;margin:10px 0}
+footer{text-align:center;padding:20px;color:#64748b}
 </style>
 </head>
 
@@ -91,214 +49,386 @@ footer{
 </header>
 
 <div class="login" id="loginBox">
-
 <h2>Admin Login</h2>
-
-<input type="email" id="email"
-placeholder="Admin Email">
-
-<input type="password" id="password"
-placeholder="Password">
-
+<input type="email" id="email" placeholder="Admin Email">
+<input type="password" id="password" placeholder="Password">
 <button onclick="adminLogin()">Login</button>
-
-<p style="text-align:center">
-<a onclick="forgotPassword()">Forgot Password?</a>
-</p>
-
+<p style="text-align:center"><a onclick="forgotPassword()">Forgot Password?</a></p>
 <p id="message"></p>
-
 </div>
 
 <div class="login" id="resetBox">
-
 <h2>Reset Password</h2>
-
-<input type="password" id="newPassword"
-placeholder="New Password">
-
-<input type="password" id="confirmPassword"
-placeholder="Confirm Password">
-
-<button onclick="updatePassword()">
-Update Password
-</button>
-
+<input type="password" id="newPassword" placeholder="New Password">
+<input type="password" id="confirmPassword" placeholder="Confirm Password">
+<button onclick="updatePassword()">Update Password</button>
 <p id="resetMessage"></p>
-
 </div>
 
 <div id="dashboard">
 
-<h2>Welcome Admin!</h2>
-
-<p>Moon Star School Management System</p>
-
+<div class="topbar">
+<div>
+<h2 style="margin:0">Admin Dashboard</h2>
 <p id="adminEmail"></p>
-
+</div>
 <button onclick="logout()">Logout</button>
+</div>
+
+<div id="notice" class="status">Loading school data...</div>
+
+<div class="cards">
+<div class="card">
+<h3>Total Students</h3>
+<strong id="totalStudents">0</strong>
+</div>
+<div class="card">
+<h3>Total Classes</h3>
+<strong id="totalClasses">0</strong>
+</div>
+<div class="card">
+<h3>Total Exams</h3>
+<strong id="totalExams">0</strong>
+</div>
+</div>
+
+<div class="panel">
+<h2>Add New Student</h2>
+<div class="grid">
+<input id="studentName" placeholder="Student Name">
+<input id="fatherName" placeholder="Father Name">
+<input id="dob" type="date">
+<select id="gender">
+<option value="">Select Gender</option>
+<option>Male</option>
+<option>Female</option>
+</select>
+<input id="className" placeholder="Class">
+<input id="section" placeholder="Section">
+<input id="seatNumber" placeholder="Seat Number">
+<input id="grNumber" placeholder="GR Number">
+<input id="phoneNumber" placeholder="Phone Number">
+<input id="caste" placeholder="Caste">
+</div>
+<button onclick="addStudent()">Save Student</button>
+<p id="addMessage"></p>
+</div>
+
+<div class="panel">
+<h2>Student Records</h2>
+<input id="searchStudent" placeholder="Search student name, father name, class or GR number" oninput="renderStudents()">
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Student Name</th>
+<th>Father Name</th>
+<th>Class</th>
+<th>Section</th>
+<th>Seat No.</th>
+<th>GR Number</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="studentRows">
+<tr><td colspan="8">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="panel">
+<h2>Classes</h2>
+<div id="classList">Loading classes...</div>
+</div>
+
+<div class="panel">
+<h2>Exams</h2>
+<div id="examList">Loading exams...</div>
+</div>
 
 </div>
 
-<footer>
-© 2026 Moon Star School Management System
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<footer>© 2026 Moon Star School Management System</footer>
 
 <script>
+const SUPABASE_URL="https://tglaxwhmfqtrdbtxdyqf.supabase.co";
+const SUPABASE_KEY="sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
 
-const SUPABASE_URL =
-"https://tglaxwhmfqtrdbtxdyqf.supabase.co";
+const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const ADMIN_EMAIL="ashfaque.thebo@gmail.com";
 
-const SUPABASE_KEY =
-"sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
+let students=[];
 
-const client = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-);
+function showMessage(id,text,color="red"){
+const el=document.getElementById(id);
+el.style.color=color;
+el.innerText=text;
+}
 
-const redirectURL = window.location.origin +
-window.location.pathname;
-
-function message(text,color="red"){
-document.getElementById("message").style.color=color;
-document.getElementById("message").innerText=text;
+function showLogin(){
+document.getElementById("loginBox").style.display="block";
+document.getElementById("resetBox").style.display="none";
+document.getElementById("dashboard").style.display="none";
 }
 
 async function adminLogin(){
-
-const email=document.getElementById("email").value.trim();
+const email=document.getElementById("email").value.trim().toLowerCase();
 const password=document.getElementById("password").value;
 
-if(!email || !password){
-message("Email aur Password enter karein.");
+if(!email||!password){
+showMessage("message","Email aur Password enter karein.");
 return;
 }
 
-const {data,error}=await client.auth.signInWithPassword({
-email,password
-});
+const {data,error}=await client.auth.signInWithPassword({email,password});
 
 if(error){
-message(error.message);
+showMessage("message",error.message);
 return;
 }
 
-if(data.user.email.toLowerCase() !==
-"ashfaque.thebo@gmail.com"){
+if(data.user.email.toLowerCase()!==ADMIN_EMAIL){
 await client.auth.signOut();
-message("Unauthorized Admin Account.");
+showMessage("message","Unauthorized Admin Account.");
 return;
 }
 
-showDashboard(data.user);
-
+await showDashboard(data.user);
 }
 
 async function forgotPassword(){
-
 const email=document.getElementById("email").value.trim();
 
 if(!email){
-message("Pehle Admin Email enter karein.");
+showMessage("message","Pehle Admin Email enter karein.");
 return;
 }
 
-const {error}=await client.auth.resetPasswordForEmail(
-email,
-{redirectTo:redirectURL}
-);
+const {error}=await client.auth.resetPasswordForEmail(email,{
+redirectTo:window.location.origin+window.location.pathname
+});
 
 if(error){
-message(error.message);
+showMessage("message",error.message);
 return;
 }
 
-message("Password reset link Gmail par bhej diya gaya.","green");
-
+showMessage("message","Password reset link Gmail par bhej diya gaya.","green");
 }
 
-function showDashboard(user){
+async function updatePassword(){
+const password=document.getElementById("newPassword").value;
+const confirm=document.getElementById("confirmPassword").value;
+
+if(password.length<8){
+showMessage("resetMessage","Password kam az kam 8 characters ka ho.");
+return;
+}
+if(password!==confirm){
+showMessage("resetMessage","Passwords match nahi karte.");
+return;
+}
+
+const {error}=await client.auth.updateUser({password});
+
+if(error){
+showMessage("resetMessage",error.message);
+return;
+}
+
+showMessage("resetMessage","Password successfully updated!","green");
+
+setTimeout(async()=>{
+await client.auth.signOut();
+showLogin();
+},2000);
+}
+
+async function showDashboard(user){
+if(!user || user.email.toLowerCase()!==ADMIN_EMAIL){
+await client.auth.signOut();
+showLogin();
+return;
+}
 
 document.getElementById("loginBox").style.display="none";
 document.getElementById("resetBox").style.display="none";
 document.getElementById("dashboard").style.display="block";
-
 document.getElementById("adminEmail").innerText=user.email;
 
+await loadAllData();
 }
 
-async function updatePassword(){
+async function loadAllData(){
+document.getElementById("notice").innerText="Loading school records...";
 
-const password=document.getElementById("newPassword").value;
-const confirm=document.getElementById("confirmPassword").value;
+await loadStudents();
+await loadClasses();
+await loadExams();
 
-const msg=document.getElementById("resetMessage");
-
-if(password.length<8){
-msg.innerText="Password kam az kam 8 characters ka ho.";
-return;
+document.getElementById("notice").innerText="School records loaded.";
 }
 
-if(password!==confirm){
-msg.innerText="Passwords match nahi karte.";
-return;
-}
-
-const {error}=await client.auth.updateUser({
-password:password
-});
+async function loadStudents(){
+const {data,error}=await client
+.from("students")
+.select("*")
+.order("created_at",{ascending:false});
 
 if(error){
-msg.innerText=error.message;
+document.getElementById("studentRows").innerHTML=
+"<tr><td colspan='8'>Students load nahi hue: "+escapeHTML(error.message)+"</td></tr>";
+showMessage("notice","Students error: "+error.message);
 return;
 }
 
-msg.style.color="green";
-msg.innerText="Password successfully updated!";
+students=data||[];
+document.getElementById("totalStudents").innerText=students.length;
+renderStudents();
+}
 
-setTimeout(async()=>{
-await client.auth.signOut();
-document.getElementById("resetBox").style.display="none";
-document.getElementById("loginBox").style.display="block";
-},2000);
+function renderStudents(){
+const search=document.getElementById("searchStudent").value.toLowerCase();
+const filtered=students.filter(s=>{
+const text=[
+s.student_name,s.father_name,s.class_name,s.class,
+s.section,s.gr_number,s.seat_number
+].join(" ").toLowerCase();
+return text.includes(search);
+});
 
+const tbody=document.getElementById("studentRows");
+
+if(filtered.length===0){
+tbody.innerHTML="<tr><td colspan='8'>No students found.</td></tr>";
+return;
+}
+
+tbody.innerHTML=filtered.map((s,i)=>`
+<tr>
+<td>${i+1}</td>
+<td>${escapeHTML(s.student_name)}</td>
+<td>${escapeHTML(s.father_name)}</td>
+<td>${escapeHTML(s.class_name||s.class)}</td>
+<td>${escapeHTML(s.section)}</td>
+<td>${escapeHTML(s.seat_number)}</td>
+<td>${escapeHTML(s.gr_number)}</td>
+<td><button class="small-btn" onclick="deleteStudent('${s.id}')">Delete</button></td>
+</tr>
+`).join("");
+}
+
+async function addStudent(){
+const student_name=document.getElementById("studentName").value.trim();
+const father_name=document.getElementById("fatherName").value.trim();
+
+if(!student_name||!father_name){
+showMessage("addMessage","Student Name aur Father Name zaroori hain.");
+return;
+}
+
+const classValue=document.getElementById("className").value.trim();
+
+const record={
+student_name,
+father_name,
+date_of_birth:document.getElementById("dob").value||null,
+gender:document.getElementById("gender").value||null,
+class_name:classValue||null,
+class:classValue||null,
+section:document.getElementById("section").value.trim()||null,
+seat_number:document.getElementById("seatNumber").value.trim()||null,
+gr_number:document.getElementById("grNumber").value.trim()||null,
+phone_number:document.getElementById("phoneNumber").value.trim()||null,
+caste:document.getElementById("caste").value.trim()||null
+};
+
+const {error}=await client.from("students").insert([record]);
+
+if(error){
+showMessage("addMessage","Student save nahi hua: "+error.message);
+return;
+}
+
+showMessage("addMessage","Student successfully save ho gaya.","green");
+
+document.querySelectorAll("#studentName,#fatherName,#dob,#gender,#className,#section,#seatNumber,#grNumber,#phoneNumber,#caste").forEach(el=>el.value="");
+
+await loadStudents();
+}
+
+async function deleteStudent(id){
+if(!confirm("Kya aap is student ko delete karna chahte hain?"))return;
+
+const {error}=await client.from("students").delete().eq("id",id);
+
+if(error){
+alert("Delete error: "+error.message);
+return;
+}
+
+alert("Student deleted.");
+await loadStudents();
+}
+
+async function loadClasses(){
+const {data,error}=await client.from("classes").select("*");
+
+if(error){
+document.getElementById("classList").innerText="Classes load nahi huin: "+error.message;
+return;
+}
+
+document.getElementById("totalClasses").innerText=(data||[]).length;
+document.getElementById("classList").innerText=(data||[]).map(x=>x.class_name).join(", ")||"No classes found.";
+}
+
+async function loadExams(){
+const {data,error}=await client.from("exams").select("*");
+
+if(error){
+document.getElementById("examList").innerText="Exams load nahi hue: "+error.message;
+return;
+}
+
+document.getElementById("totalExams").innerText=(data||[]).length;
+document.getElementById("examList").innerText=(data||[]).map(x=>x.exam_name).join(", ")||"No exams found.";
+}
+
+function escapeHTML(value){
+return String(value??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
 }
 
 async function logout(){
-
 await client.auth.signOut();
-
-document.getElementById("dashboard").style.display="none";
-document.getElementById("loginBox").style.display="block";
-
+students=[];
+showLogin();
 }
 
 client.auth.onAuthStateChange((event,session)=>{
-
 if(event==="PASSWORD_RECOVERY"){
 document.getElementById("loginBox").style.display="none";
 document.getElementById("dashboard").style.display="none";
 document.getElementById("resetBox").style.display="block";
 }
-
 });
 
 async function checkSession(){
-
 const {data}=await client.auth.getSession();
 
 if(data.session){
-showDashboard(data.session.user);
+await showDashboard(data.session.user);
+}else{
+showLogin();
 }
-
 }
 
 checkSession();
-
 </script>
-
 </body>
 </html>
