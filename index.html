@@ -52,11 +52,14 @@ button{
  cursor:pointer;
 }
 
-button:disabled{opacity:.6}
+a{
+ color:#087e83;
+ cursor:pointer;
+ text-decoration:none;
+}
 
 #message{
  text-align:center;
- color:#dc2626;
  font-size:14px;
 }
 
@@ -69,6 +72,8 @@ button:disabled{opacity:.6}
  border-radius:12px;
  text-align:center;
 }
+
+#resetBox,#dashboard{display:none}
 
 footer{
  text-align:center;
@@ -89,25 +94,37 @@ footer{
 
 <h2>Admin Login</h2>
 
-<input
- type="email"
- id="email"
- placeholder="Admin Email"
- autocomplete="username"
->
+<input type="email" id="email"
+placeholder="Admin Email">
 
-<input
- type="password"
- id="password"
- placeholder="Password"
- autocomplete="current-password"
->
+<input type="password" id="password"
+placeholder="Password">
 
-<button id="loginBtn" onclick="adminLogin()">
-Login
-</button>
+<button onclick="adminLogin()">Login</button>
+
+<p style="text-align:center">
+<a onclick="forgotPassword()">Forgot Password?</a>
+</p>
 
 <p id="message"></p>
+
+</div>
+
+<div class="login" id="resetBox">
+
+<h2>Reset Password</h2>
+
+<input type="password" id="newPassword"
+placeholder="New Password">
+
+<input type="password" id="confirmPassword"
+placeholder="Confirm Password">
+
+<button onclick="updatePassword()">
+Update Password
+</button>
+
+<p id="resetMessage"></p>
 
 </div>
 
@@ -137,96 +154,149 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
 "sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
 
-const supabaseClient =
-window.supabase.createClient(
+const client = window.supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY
 );
 
+const redirectURL = window.location.origin +
+window.location.pathname;
+
+function message(text,color="red"){
+document.getElementById("message").style.color=color;
+document.getElementById("message").innerText=text;
+}
+
 async function adminLogin(){
 
- const email =
- document.getElementById("email").value.trim();
+const email=document.getElementById("email").value.trim();
+const password=document.getElementById("password").value;
 
- const password =
- document.getElementById("password").value;
+if(!email || !password){
+message("Email aur Password enter karein.");
+return;
+}
 
- const message =
- document.getElementById("message");
+const {data,error}=await client.auth.signInWithPassword({
+email,password
+});
 
- const button =
- document.getElementById("loginBtn");
+if(error){
+message(error.message);
+return;
+}
 
- message.style.color="#dc2626";
+if(data.user.email.toLowerCase() !==
+"ashfaque.thebo@gmail.com"){
+await client.auth.signOut();
+message("Unauthorized Admin Account.");
+return;
+}
 
- if(!email || !password){
-   message.innerText="Email aur Password enter karein.";
-   return;
- }
+showDashboard(data.user);
 
- button.disabled=true;
- button.innerText="Please wait...";
- message.innerText="";
+}
 
- try{
+async function forgotPassword(){
 
-   const {data,error} =
-   await supabaseClient.auth.signInWithPassword({
-     email:email,
-     password:password
-   });
+const email=document.getElementById("email").value.trim();
 
-   if(error) throw error;
+if(!email){
+message("Pehle Admin Email enter karein.");
+return;
+}
 
-   showDashboard(data.user);
+const {error}=await client.auth.resetPasswordForEmail(
+email,
+{redirectTo:redirectURL}
+);
 
- }catch(error){
+if(error){
+message(error.message);
+return;
+}
 
-   message.innerText="Login Failed: "+error.message;
-
- }finally{
-
-   button.disabled=false;
-   button.innerText="Login";
-
- }
+message("Password reset link Gmail par bhej diya gaya.","green");
 
 }
 
 function showDashboard(user){
 
- document.getElementById("loginBox").style.display="none";
+document.getElementById("loginBox").style.display="none";
+document.getElementById("resetBox").style.display="none";
+document.getElementById("dashboard").style.display="block";
 
- document.getElementById("dashboard").style.display="block";
+document.getElementById("adminEmail").innerText=user.email;
 
- document.getElementById("adminEmail").innerText=user.email;
+}
+
+async function updatePassword(){
+
+const password=document.getElementById("newPassword").value;
+const confirm=document.getElementById("confirmPassword").value;
+
+const msg=document.getElementById("resetMessage");
+
+if(password.length<8){
+msg.innerText="Password kam az kam 8 characters ka ho.";
+return;
+}
+
+if(password!==confirm){
+msg.innerText="Passwords match nahi karte.";
+return;
+}
+
+const {error}=await client.auth.updateUser({
+password:password
+});
+
+if(error){
+msg.innerText=error.message;
+return;
+}
+
+msg.style.color="green";
+msg.innerText="Password successfully updated!";
+
+setTimeout(async()=>{
+await client.auth.signOut();
+document.getElementById("resetBox").style.display="none";
+document.getElementById("loginBox").style.display="block";
+},2000);
 
 }
 
 async function logout(){
 
- await supabaseClient.auth.signOut();
+await client.auth.signOut();
 
- document.getElementById("dashboard").style.display="none";
-
- document.getElementById("loginBox").style.display="block";
-
- document.getElementById("password").value="";
+document.getElementById("dashboard").style.display="none";
+document.getElementById("loginBox").style.display="block";
 
 }
 
-async function checkLogin(){
+client.auth.onAuthStateChange((event,session)=>{
 
- const {data} =
- await supabaseClient.auth.getSession();
+if(event==="PASSWORD_RECOVERY"){
+document.getElementById("loginBox").style.display="none";
+document.getElementById("dashboard").style.display="none";
+document.getElementById("resetBox").style.display="block";
+}
 
- if(data.session){
-   showDashboard(data.session.user);
- }
+});
+
+async function checkSession(){
+
+const {data}=await client.auth.getSession();
+
+if(data.session){
+showDashboard(data.session.user);
+}
 
 }
 
-checkLogin();
+checkSession();
 
 </script>
 
