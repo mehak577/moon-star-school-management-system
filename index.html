@@ -13,12 +13,13 @@ header{background:#102a43;color:white;padding:22px;text-align:center}
 header h1{margin:0;font-size:25px}
 header p{color:#b8dce0;margin-bottom:0}
 .login{max-width:380px;margin:45px auto;background:white;padding:25px;border-radius:12px;box-shadow:0 5px 20px #0002}
-h2{text-align:center;color:#087e83}
+h2{color:#087e83}
+.login h2{text-align:center}
 input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #ddd;border-radius:6px}
 button{background:#087e83;color:white;border:0;font-weight:bold;cursor:pointer}
 button:hover{opacity:.9}
 a{color:#087e83;cursor:pointer}
-#message,#resetMessage{text-align:center;font-size:14px}
+#message,#resetMessage,#addMessage,#classMessage{text-align:center;font-size:14px}
 #resetBox,#dashboard{display:none}
 #dashboard{max-width:1150px;margin:25px auto;padding:15px}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -35,8 +36,8 @@ th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}
 th{background:#102a43;color:white}
 .table-wrap{overflow-x:auto}
 .small-btn{width:auto;padding:7px 12px;background:#b42318}
-.secondary{background:#475569}
 .status{padding:10px;background:#e0f2f1;border-radius:6px;margin:10px 0}
+.class-item{padding:12px;background:#f1f5f9;margin:7px 0;border-radius:6px}
 footer{text-align:center;padding:20px;color:#64748b}
 </style>
 </head>
@@ -78,18 +79,18 @@ footer{text-align:center;padding:20px;color:#64748b}
 <div id="notice" class="status">Loading school data...</div>
 
 <div class="cards">
-<div class="card">
-<h3>Total Students</h3>
-<strong id="totalStudents">0</strong>
+<div class="card"><h3>Total Students</h3><strong id="totalStudents">0</strong></div>
+<div class="card"><h3>Total Classes</h3><strong id="totalClasses">0</strong></div>
+<div class="card"><h3>Total Exams</h3><strong id="totalExams">0</strong></div>
 </div>
-<div class="card">
-<h3>Total Classes</h3>
-<strong id="totalClasses">0</strong>
-</div>
-<div class="card">
-<h3>Total Exams</h3>
-<strong id="totalExams">0</strong>
-</div>
+
+<div class="panel">
+<h2>Classes Management</h2>
+<input type="text" id="newClassName" placeholder="Enter Class Name (e.g. Nursery, Class 1)">
+<button onclick="addClass()">Add Class</button>
+<p id="classMessage"></p>
+<h3>Available Classes</h3>
+<div id="classList">Loading classes...</div>
 </div>
 
 <div class="panel">
@@ -103,7 +104,9 @@ footer{text-align:center;padding:20px;color:#64748b}
 <option>Male</option>
 <option>Female</option>
 </select>
-<input id="className" placeholder="Class">
+<select id="className">
+<option value="">Select Class</option>
+</select>
 <input id="section" placeholder="Section">
 <input id="seatNumber" placeholder="Seat Number">
 <input id="grNumber" placeholder="GR Number">
@@ -117,19 +120,13 @@ footer{text-align:center;padding:20px;color:#64748b}
 <div class="panel">
 <h2>Student Records</h2>
 <input id="searchStudent" placeholder="Search student name, father name, class or GR number" oninput="renderStudents()">
-
 <div class="table-wrap">
 <table>
 <thead>
 <tr>
-<th>#</th>
-<th>Student Name</th>
-<th>Father Name</th>
-<th>Class</th>
-<th>Section</th>
-<th>Seat No.</th>
-<th>GR Number</th>
-<th>Action</th>
+<th>#</th><th>Student Name</th><th>Father Name</th>
+<th>Class</th><th>Section</th><th>Seat No.</th>
+<th>GR Number</th><th>Action</th>
 </tr>
 </thead>
 <tbody id="studentRows">
@@ -137,11 +134,6 @@ footer{text-align:center;padding:20px;color:#64748b}
 </tbody>
 </table>
 </div>
-</div>
-
-<div class="panel">
-<h2>Classes</h2>
-<div id="classList">Loading classes...</div>
 </div>
 
 <div class="panel">
@@ -156,11 +148,12 @@ footer{text-align:center;padding:20px;color:#64748b}
 <script>
 const SUPABASE_URL="https://tglaxwhmfqtrdbtxdyqf.supabase.co";
 const SUPABASE_KEY="sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
-
-const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const ADMIN_EMAIL="ashfaque.thebo@gmail.com";
 
+const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 let students=[];
+let classes=[];
 
 function showMessage(id,text,color="red"){
 const el=document.getElementById(id);
@@ -227,6 +220,7 @@ if(password.length<8){
 showMessage("resetMessage","Password kam az kam 8 characters ka ho.");
 return;
 }
+
 if(password!==confirm){
 showMessage("resetMessage","Passwords match nahi karte.");
 return;
@@ -248,7 +242,7 @@ showLogin();
 }
 
 async function showDashboard(user){
-if(!user || user.email.toLowerCase()!==ADMIN_EMAIL){
+if(!user||user.email.toLowerCase()!==ADMIN_EMAIL){
 await client.auth.signOut();
 showLogin();
 return;
@@ -264,19 +258,72 @@ await loadAllData();
 
 async function loadAllData(){
 document.getElementById("notice").innerText="Loading school records...";
-
-await loadStudents();
 await loadClasses();
+await loadStudents();
 await loadExams();
-
 document.getElementById("notice").innerText="School records loaded.";
 }
 
+async function loadClasses(){
+const {data,error}=await client.from("classes").select("*").order("created_at");
+
+if(error){
+document.getElementById("classList").innerText="Classes load nahi huin: "+error.message;
+return;
+}
+
+classes=data||[];
+document.getElementById("totalClasses").innerText=classes.length;
+
+const list=document.getElementById("classList");
+const select=document.getElementById("className");
+select.innerHTML='<option value="">Select Class</option>';
+
+if(classes.length===0){
+list.innerText="No classes found.";
+return;
+}
+
+list.innerHTML=classes.map(c=>
+`<div class="class-item">${escapeHTML(c.class_name)}</div>`
+).join("");
+
+classes.forEach(c=>{
+const option=document.createElement("option");
+option.value=c.class_name;
+option.textContent=c.class_name;
+select.appendChild(option);
+});
+}
+
+async function addClass(){
+const name=document.getElementById("newClassName").value.trim();
+
+if(!name){
+showMessage("classMessage","Class name enter karein.");
+return;
+}
+
+if(classes.some(c=>c.class_name.toLowerCase()===name.toLowerCase())){
+showMessage("classMessage","Ye class pehle se mojood hai.");
+return;
+}
+
+const {error}=await client.from("classes").insert([{class_name:name}]);
+
+if(error){
+showMessage("classMessage","Class save nahi hui: "+error.message);
+return;
+}
+
+document.getElementById("newClassName").value="";
+showMessage("classMessage","Class successfully add ho gayi.","green");
+await loadClasses();
+}
+
 async function loadStudents(){
-const {data,error}=await client
-.from("students")
-.select("*")
-.order("created_at",{ascending:false});
+const {data,error}=await client.from("students")
+.select("*").order("created_at",{ascending:false});
 
 if(error){
 document.getElementById("studentRows").innerHTML=
@@ -292,6 +339,7 @@ renderStudents();
 
 function renderStudents(){
 const search=document.getElementById("searchStudent").value.toLowerCase();
+
 const filtered=students.filter(s=>{
 const text=[
 s.student_name,s.father_name,s.class_name,s.class,
@@ -330,15 +378,20 @@ showMessage("addMessage","Student Name aur Father Name zaroori hain.");
 return;
 }
 
-const classValue=document.getElementById("className").value.trim();
+const classValue=document.getElementById("className").value;
+
+if(!classValue){
+showMessage("addMessage","Pehle class select karein.");
+return;
+}
 
 const record={
-student_name,
-father_name,
+student_name:student_name,
+father_name:father_name,
 date_of_birth:document.getElementById("dob").value||null,
 gender:document.getElementById("gender").value||null,
-class_name:classValue||null,
-class:classValue||null,
+class_name:classValue,
+class:classValue,
 section:document.getElementById("section").value.trim()||null,
 seat_number:document.getElementById("seatNumber").value.trim()||null,
 gr_number:document.getElementById("grNumber").value.trim()||null,
@@ -355,7 +408,9 @@ return;
 
 showMessage("addMessage","Student successfully save ho gaya.","green");
 
-document.querySelectorAll("#studentName,#fatherName,#dob,#gender,#className,#section,#seatNumber,#grNumber,#phoneNumber,#caste").forEach(el=>el.value="");
+document.querySelectorAll(
+"#studentName,#fatherName,#dob,#gender,#className,#section,#seatNumber,#grNumber,#phoneNumber,#caste"
+).forEach(el=>el.value="");
 
 await loadStudents();
 }
@@ -374,18 +429,6 @@ alert("Student deleted.");
 await loadStudents();
 }
 
-async function loadClasses(){
-const {data,error}=await client.from("classes").select("*");
-
-if(error){
-document.getElementById("classList").innerText="Classes load nahi huin: "+error.message;
-return;
-}
-
-document.getElementById("totalClasses").innerText=(data||[]).length;
-document.getElementById("classList").innerText=(data||[]).map(x=>x.class_name).join(", ")||"No classes found.";
-}
-
 async function loadExams(){
 const {data,error}=await client.from("exams").select("*");
 
@@ -395,7 +438,8 @@ return;
 }
 
 document.getElementById("totalExams").innerText=(data||[]).length;
-document.getElementById("examList").innerText=(data||[]).map(x=>x.exam_name).join(", ")||"No exams found.";
+document.getElementById("examList").innerText=
+(data||[]).map(x=>x.exam_name).join(", ")||"No exams found.";
 }
 
 function escapeHTML(value){
