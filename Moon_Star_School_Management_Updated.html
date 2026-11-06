@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moon Star Public High School - Management</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#102a43;--teal:#087e8b;--light:#f3f7fa;--ink:#243b53;--muted:#627d98;--line:#d9e2ec;--white:#fff;--red:#c0392b;--green:#16845b}
+*{box-sizing:border-box}body{margin:0;background:var(--light);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+header{background:linear-gradient(120deg,var(--navy),var(--teal));color:white;padding:22px 16px;text-align:center}header h1{margin:0 0 6px;font-size:25px}header p{margin:0;font-size:14px}
+.wrap{max-width:1180px;margin:22px auto;padding:0 14px}.panel{background:white;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 3px 12px rgba(16,42,67,.05)}
+h2{margin:0 0 15px;color:var(--navy);font-size:20px}h3{margin:0 0 12px;color:var(--navy);font-size:17px}
+label{display:block;font-weight:700;font-size:13px;margin:10px 0 5px}
+input,select{width:100%;padding:11px;border:1px solid #bcccdc;border-radius:7px;font-size:15px;background:white;color:var(--ink)}
+button{border:0;border-radius:7px;padding:10px 15px;background:var(--teal);color:white;font-weight:700;cursor:pointer;font-size:14px;margin:6px 5px 0 0}
+button:hover{filter:brightness(.94)}button.secondary{background:var(--navy)}button.danger{background:var(--red)}button.light{background:#e6f2f4;color:var(--navy);border:1px solid #b7dadd}button:disabled{opacity:.55;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stat{background:#f7fbfc;border:1px solid var(--line);border-radius:10px;padding:16px}.stat strong{display:block;font-size:28px;color:var(--teal);margin-top:5px}
+.nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}.nav button{margin:0}.hidden{display:none!important}
+.msg{padding:10px 12px;border-radius:7px;margin:10px 0;font-size:14px;white-space:pre-wrap}.success{background:#e7f6ef;color:#116342;border:1px solid #b7e4ce}.error{background:#fff0ef;color:#922b21;border:1px solid #f2c2bd}.info{background:#eaf4fb;color:#174a6e;border:1px solid #c7dfef}
+.tablebox{overflow-x:auto;margin-top:12px}table{border-collapse:collapse;width:100%;min-width:700px;background:white}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#edf5f7;color:var(--navy)}
+.row-actions{white-space:nowrap}.row-actions button{padding:7px 9px;font-size:12px}.form-actions{margin-top:12px}.muted{color:var(--muted);font-size:13px}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#loginBox{max-width:460px;margin:35px auto}.footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+@media(max-width:700px){.grid,.grid.two{grid-template-columns:1fr}header h1{font-size:21px}.panel{padding:14px}}
+.photo-preview{max-width:90px;max-height:90px}
+</style>
+</head>
+<body>
+<header><h1>Moon Star Public High School</h1><p>Khanwahan | School Management System</p></header>
+<div class="wrap">
+<section id="loginBox" class="panel">
+<h2>Admin Login</h2><div id="loginMsg"></div>
+<form id="loginForm" autocomplete="on">
+<label>Email</label><input id="loginEmail" type="email" required autocomplete="username" value="ashfaque.thebo@gmail.com">
+<label>Password</label><input id="loginPassword" type="password" required autocomplete="current-password">
+<button id="loginBtn" type="submit">Login</button>
+<button type="button" class="light" id="forgotBtn">Forgot Password?</button>
+</form>
+<div id="forgotBox" class="hidden"><hr><h3>Reset Password</h3><label>Admin Email</label><input id="resetEmail" type="email" value="ashfaque.thebo@gmail.com"><button id="sendResetBtn" type="button">Send Reset Link</button></div>
+<div id="newPasswordBox" class="hidden"><hr><h3>Set New Password</h3><label>New Password</label><input id="newPassword" type="password" minlength="6"><button id="savePasswordBtn" type="button">Update Password</button></div>
+</section>
+
+<section id="appBox" class="hidden">
+<div class="panel topline"><div><h2 style="margin-bottom:4px">Admin Dashboard</h2><span class="muted" id="signedInAs"></span></div><button class="danger" id="logoutBtn">Logout</button></div>
+<div class="grid" style="margin-bottom:18px">
+<div class="stat">Total Students<strong id="studentCount">0</strong></div>
+<div class="stat">Total Classes<strong id="classCount">0</strong></div>
+<div class="stat">Total Exams<strong id="examCount">0</strong></div>
+</div>
+<div class="nav">
+<button data-page="dashboardPage" class="secondary">Dashboard</button><button data-page="classesPage">Classes</button><button data-page="admissionPage">Student Admission</button><button data-page="studentsPage">Student List</button><button data-page="seatsPage">Seat Number Allotment</button><button data-page="examsPage">Exams</button><button data-page="subjectsPage">Subjects</button><button data-page="slipPage">Slip Card PDF</button><button data-page="feesPage">Fee Management</button>
+</div>
+<div id="globalMsg"></div>
+<section id="dashboardPage" class="page panel"><h2>Welcome Admin!</h2><p>School records loaded. Use the sections above to manage classes, students, seat numbers and exams.</p><div class="msg info">Seat numbers are managed separately. Select a class in Seat Number Allotment and assign its starting number.</div></section>
+
+<section id="classesPage" class="page panel hidden">
+<h2>Class Management</h2>
+<form id="classForm" class="grid two"><div><label>Class Name</label><input id="className" placeholder="Example: Nursery" required></div><div style="align-self:end"><button type="submit">Add Class</button></div></form>
+<div id="classesMsg"></div><div class="tablebox"><table><thead><tr><th>#</th><th>Class Name</th><th>Created</th><th>Action</th></tr></thead><tbody id="classesBody"></tbody></table></div>
+</section>
+
+<section id="admissionPage" class="page panel hidden">
+<h2 id="studentFormTitle">Student Admission</h2><div class="msg info">Seat number yahan nahi poocha jayega. Seat number baad mein alag section se allot hoga.</div>
+<form id="studentForm"><input type="hidden" id="editStudentId">
+<div class="grid two">
+<div><label>Student Name *</label><input id="studentName" required></div><div><label>Father Name *</label><input id="fatherName" required></div>
+<div><label>GR Number</label><input id="grNumber"></div><div><label>Caste</label><input id="caste"></div>
+<div><label>Date of Birth</label><input id="dob" type="date"></div><div><label>Gender</label><select id="gender"><option value="">Select Gender</option><option>Male</option><option>Female</option></select></div>
+<div><label>Phone Number</label><input id="phone" type="tel"></div><div><label>Class *</label><select id="studentClass" required><option value="">Select Class</option></select></div>
+<div><label>Section</label><input id="section" placeholder="A / B / C"></div><div><label>Student Photo</label><input id="studentPhoto" type="file" accept="image/*"><small class="muted" id="photoHint">Optional. Photo student photo bucket mein save hogi.</small></div>
+</div>
+<div class="form-actions"><button type="submit" id="saveStudentBtn">Save Student</button><button type="button" class="light hidden" id="cancelEditBtn">Cancel Edit</button></div>
+</form><div id="admissionMsg"></div>
+</section>
+
+<section id="studentsPage" class="page panel hidden">
+<div class="topline"><h2>Student Records</h2><button id="refreshStudentsBtn" class="light">Refresh</button></div>
+<label>Search Student</label><input id="studentSearch" placeholder="Search by student name, father name, GR, class or seat number">
+<div class="tablebox"><table><thead><tr><th>#</th><th>Student Name</th><th>Father Name</th><th>GR Number</th><th>Class</th><th>Section</th><th>Seat Number</th><th>Action</th></tr></thead><tbody id="studentsBody"></tbody></table></div><div id="studentsMsg"></div>
+</section>
+
+<section id="seatsPage" class="page panel hidden">
+<h2>Seat Number Allotment</h2><div class="msg info">Har class ka starting number alag likhein. Misal: Nursery 10001, KG 20001. Students ka order record banne ki date ke mutabiq hoga.</div>
+<div class="grid two"><div><label>Select Class</label><select id="seatClass"><option value="">Select Class</option></select></div><div><label>Starting Seat Number</label><input id="startingSeat" type="number" min="1" step="1" placeholder="Example: 10001"></div></div>
+<button id="loadSeatStudentsBtn" class="secondary">Show Class Students</button><button id="allotSeatsBtn">Allot Seat Numbers</button><div id="seatsMsg"></div>
+<div class="tablebox"><table><thead><tr><th>#</th><th>Student Name</th><th>Father Name</th><th>GR Number</th><th>Current Seat Number</th><th>New Seat Number</th></tr></thead><tbody id="seatsBody"></tbody></table></div>
+</section>
+
+<section id="examsPage" class="page panel hidden">
+<h2>Exam Management</h2><form id="examForm" class="grid two"><div><label>Exam Name</label><input id="examName" required placeholder="Annual Examination"></div><div><label>Exam Date</label><input id="examDate" type="date"></div><div><button type="submit">Add Exam</button></div></form>
+<div id="examsMsg"></div><div class="tablebox"><table><thead><tr><th>#</th><th>Exam Name</th><th>Exam Date</th><th>Created</th><th>Action</th></tr></thead><tbody id="examsBody"></tbody></table></div>
+</section>
+<section id="feesPage" class="page panel hidden">
+<h2>Fee Management</h2>
+<div class="msg info">Sirf Admission Fee aur Monthly Fee. Pehle class-wise default fee set karein. Zaroorat par kisi student ki fee alag bhi set kar sakte hain.</div>
+<h3>Class-wise Fee Setup</h3>
+<div class="grid"><div><label>Class</label><select id="feeClass"><option value="">Select Class</option></select></div><div><label>Admission Fee</label><input id="classAdmissionFee" type="number" min="0" step="0.01" value="0"></div><div><label>Monthly Fee</label><input id="classMonthlyFee" type="number" min="0" step="0.01" value="0"></div></div>
+<button id="saveClassFeeBtn">Save Class Fee</button><div id="feeSetupMsg"></div>
+<hr><h3>Student-wise Fee (Optional)</h3>
+<div class="grid two"><div><label>Student</label><select id="feeStudent"><option value="">Select Student</option></select></div><div><label>Admission Fee</label><input id="studentAdmissionFee" type="number" min="0" step="0.01" placeholder="Blank = class fee"></div><div><label>Monthly Fee</label><input id="studentMonthlyFee" type="number" min="0" step="0.01" placeholder="Blank = class fee"></div></div>
+<button id="saveStudentFeeBtn">Save Student Fee</button><div id="studentFeeMsg"></div>
+<hr><h3>Receive Fee</h3>
+<div class="grid"><div><label>Student</label><select id="paymentStudent"><option value="">Select Student</option></select></div><div><label>Fee Type</label><select id="paymentType"><option value="monthly">Monthly Fee</option><option value="admission">Admission Fee</option></select></div><div><label>Month (Monthly Fee only)</label><input id="paymentMonth" type="month"></div><div><label>Amount Received</label><input id="paymentAmount" type="number" min="1" step="0.01"></div><div><label>Payment Date</label><input id="paymentDate" type="date"></div><div><label>Note</label><input id="paymentNote" placeholder="Optional"></div></div>
+<button id="receiveFeeBtn" class="secondary">Save Payment & Print Receipt</button><div id="paymentMsg"></div>
+<hr><h3>Fee Records / Balance</h3>
+<div class="grid two"><div><label>Filter Student</label><select id="feeReportStudent"><option value="">All Students</option></select></div><div style="align-self:end"><button id="refreshFeesBtn" class="light">Refresh Fee Records</button></div></div>
+<div class="tablebox"><table><thead><tr><th>Date</th><th>Student</th><th>Class</th><th>Fee Type</th><th>Month</th><th>Paid Amount</th><th>Receipt</th></tr></thead><tbody id="feePaymentsBody"></tbody></table></div><div id="feeReportMsg"></div>
+</section>
+<section id="subjectsPage" class="page panel hidden">
+<h2>Subject Management</h2>
+<div class="grid two"><div><label>Select Class</label><select id="subjectClass"><option value="">Select Class</option></select></div><div><label>Subject Name</label><input id="subjectName" placeholder="English / Mathematics"></div></div>
+<button id="addSubjectBtn">Add Subject</button><div id="subjectsMsg"></div>
+<div class="tablebox"><table><thead><tr><th>#</th><th>Class</th><th>Subject</th><th>Action</th></tr></thead><tbody id="subjectsBody"></tbody></table></div>
+</section>
+<section id="slipPage" class="page panel hidden">
+<h2>Slip Card & Time Table PDF</h2><div class="msg info">Class select karein. Har student ka slip card aur usi class ke subjects wala timetable A4 page par 4 students ke hisaab se print hoga.</div>
+<div class="grid two"><div><label>Select Class</label><select id="slipClass"><option value="">Select Class</option></select></div><div><label>Exam / Session</label><input id="slipSession" value="Examination" placeholder="Annual Examination 2026"></div></div>
+<button id="printSlipBtn" class="secondary">Download / Print Class PDF</button><div id="slipMsg"></div>
+</section>
+</section>
+</div>
+<div class="footer">Moon Star Public High School | Management System</div>
+
+<script>
+(() => {
+"use strict";
+const SUPABASE_URL = "https://tglaxwhmfqtrdbtxdyqf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_yTkulDMTToWewAH7DbYfyw_uW8H2dAm";
+const ADMIN_EMAIL = "ashfaque.thebo@gmail.com";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let students=[], classes=[], exams=[], subjects=[], seatPreview=[], feeSettings=[], studentFeeOverrides=[], feePayments=[];
+const PHOTO_BUCKET = "student photo";
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const showMsg = (id,text,type="info") => { const el=$(id); if(el) el.innerHTML=text?`<div class="msg ${type}">${esc(text)}</div>`:""; };
+const niceDate = value => value ? new Date(value).toLocaleDateString() : "—";
+const onlyAdmin = email => (email||"").toLowerCase()===ADMIN_EMAIL.toLowerCase();
+let loadingRecords=false;
+
+function showApp(session){
+  $("loginBox").classList.add("hidden"); $("appBox").classList.remove("hidden");
+  $("signedInAs").textContent="Signed in: "+(session?.user?.email||"");
+  loadAll();
+}
+function showLogin(){
+  $("appBox").classList.add("hidden"); $("loginBox").classList.remove("hidden");
+}
+function openPage(pageId){
+  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+  $(pageId).classList.remove("hidden");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("secondary",b.dataset.page===pageId));
+}
+async function loadAll(){
+  if(loadingRecords)return; loadingRecords=true;
+  showMsg("globalMsg","Loading school records…");
+  try{
+    const [s,c,e,sub,fs,fo,fp]=await Promise.all([
+      db.from("students").select("*").order("created_at",{ascending:true}),
+      db.from("classes").select("*").order("created_at",{ascending:true}),
+      db.from("exams").select("*").order("created_at",{ascending:true}),
+      db.from("subjects").select("*").order("created_at",{ascending:true}),
+      db.from("fee_settings").select("*"),
+      db.from("student_fee_overrides").select("*"),
+      db.from("fee_payments").select("*").order("payment_date",{ascending:false})
+    ]);
+    const errors=[s.error,c.error,e.error,sub.error,fs.error,fo.error,fp.error].filter(Boolean);
+    if(errors.length) showMsg("globalMsg",errors.map(x=>x.message).join(" | "),"error");
+    else{
+      students=s.data||[]; classes=c.data||[]; exams=e.data||[]; subjects=sub.data||[]; feeSettings=fs.data||[]; studentFeeOverrides=fo.data||[]; feePayments=fp.data||[];
+      showMsg("globalMsg","School records loaded.","success");
+    }
+    renderAll();
+  }catch(err){showMsg("globalMsg",err.message||String(err),"error");}
+  finally{loadingRecords=false;}
+}
+function renderAll(){
+  $("studentCount").textContent=students.length; $("classCount").textContent=classes.length; $("examCount").textContent=exams.length;
+  renderClasses(); renderStudents(); renderExams(); renderSubjects(); fillClassOptions(); renderFeeOptions(); renderFeePayments();
+}
+function fillClassOptions(){
+  const opts=classes.map(c=>`<option value="${esc(c.class_name)}">${esc(c.class_name)}</option>`).join("");
+  const sv=$("studentClass").value, cv=$("seatClass").value, sc=$("subjectClass").value, pc=$("slipClass").value, fc=$("feeClass").value;
+  $("studentClass").innerHTML='<option value="">Select Class</option>'+opts;
+  $("seatClass").innerHTML='<option value="">Select Class</option>'+opts;
+  $("subjectClass").innerHTML='<option value="">Select Class</option>'+opts;
+  $("slipClass").innerHTML='<option value="">Select Class</option>'+opts;
+  $("feeClass").innerHTML='<option value="">Select Class</option>'+opts;
+  if(classes.some(c=>c.class_name===sv))$("studentClass").value=sv;
+  if(classes.some(c=>c.class_name===cv))$("seatClass").value=cv;
+  if(classes.some(c=>c.class_name===sc))$("subjectClass").value=sc;
+  if(classes.some(c=>c.class_name===pc))$("slipClass").value=pc;
+  if(classes.some(c=>c.class_name===fc))$("feeClass").value=fc;
+}
+function renderClasses(){
+  $("classesBody").innerHTML=classes.map((c,i)=>`<tr><td>${i+1}</td><td>${esc(c.class_name)}</td><td>${niceDate(c.created_at)}</td><td><button class="danger" data-delete-class="${esc(c.id)}">Delete</button></td></tr>`).join("")||'<tr><td colspan="4">No classes added yet.</td></tr>';
+}
+function renderStudents(){
+  const q=$("studentSearch").value.trim().toLowerCase();
+  const list=students.filter(s=>[s.student_name,s.father_name,s.gr_number,s.class_name,s.section,s.seat_number].some(v=>String(v??"").toLowerCase().includes(q)));
+  $("studentsBody").innerHTML=list.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.student_name)}</td><td>${esc(s.father_name)}</td><td>${esc(s.gr_number||"—")}</td><td>${esc(s.class_name||"—")}</td><td>${esc(s.section||"—")}</td><td>${esc(s.seat_number||"—")}</td><td class="row-actions"><button class="light" data-edit-student="${esc(s.id)}">Edit</button><button class="danger" data-delete-student="${esc(s.id)}">Delete</button></td></tr>`).join("")||'<tr><td colspan="8">No students found.</td></tr>';
+}
+function renderExams(){
+  $("examsBody").innerHTML=exams.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.exam_name)}</td><td>${niceDate(e.exam_date)}</td><td>${niceDate(e.created_at)}</td><td><button class="danger" data-delete-exam="${esc(e.id)}">Delete</button></td></tr>`).join("")||'<tr><td colspan="5">No exams added yet.</td></tr>';
+}
+function renderSubjects(){
+  const cls=$("subjectClass").value;
+  const list=subjects.filter(x=>!cls||x.class_name===cls);
+  $("subjectsBody").innerHTML=list.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.class_name)}</td><td>${esc(x.subject_name)}</td><td><button class="light" data-edit-subject="${esc(x.id)}">Edit</button><button class="danger" data-delete-subject="${esc(x.id)}">Delete</button></td></tr>`).join("")||'<tr><td colspan="4">No subjects added for this class.</td></tr>';
+}
+function photoUrl(student){
+  const raw=student?.photo_path||student?.student_photo||"";
+  if(!raw)return "";
+  if(/^https?:\/\//i.test(raw))return raw;
+  const path=raw.replace(/^student photo\//,"" ).replace(/^\//,"");
+  return db.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+$("loginForm").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const email=$("loginEmail").value.trim(), password=$("loginPassword").value;
+  if(!email||!password){showMsg("loginMsg","Email aur password enter karein.","error");return;}
+  const btn=$("loginBtn"); btn.disabled=true; btn.textContent="Please wait…"; showMsg("loginMsg","Signing in…");
+  try{
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error){showMsg("loginMsg",error.message,"error");return;}
+    if(!onlyAdmin(data.user?.email)){await db.auth.signOut();showMsg("loginMsg","This account is not authorized as admin.","error");return;}
+    $("loginPassword").value="";
+    showMsg("loginMsg","Login successful.","success");
+    showApp(data.session);
+  }catch(err){showMsg("loginMsg",err.message||String(err),"error");}
+  finally{btn.disabled=false;btn.textContent="Login";}
+});
+$("forgotBtn").addEventListener("click",()=>{$("forgotBox").classList.toggle("hidden");});
+$("sendResetBtn").addEventListener("click",async()=>{
+  const email=$("resetEmail").value.trim(); if(!email){showMsg("loginMsg","Admin email enter karein.","error");return;}
+  const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});
+  showMsg("loginMsg",error?error.message:"Password reset link email par bhej diya gaya hai.",error?"error":"success");
+});
+$("savePasswordBtn").addEventListener("click",async()=>{
+  const password=$("newPassword").value;
+  if(password.length<6){showMsg("loginMsg","Password kam az kam 6 characters ka ho.","error");return;}
+  const {error}=await db.auth.updateUser({password});
+  showMsg("loginMsg",error?error.message:"Password successfully update ho gaya.",error?"error":"success");
+  if(!error){$("newPassword").value="";$("newPasswordBox").classList.add("hidden");}
+});
+$("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();showLogin();});
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>openPage(b.dataset.page)));
+
+$("classForm").addEventListener("submit",async ev=>{
+  ev.preventDefault(); const name=$("className").value.trim(); if(!name)return;
+  const exists=classes.some(c=>c.class_name.toLowerCase()===name.toLowerCase());
+  if(exists){showMsg("classesMsg","This class already exists.","error");return;}
+  const {error}=await db.from("classes").insert({class_name:name});
+  if(error)showMsg("classesMsg",error.message,"error");
+  else{$("className").value="";showMsg("classesMsg","Class added successfully.","success");await loadAll();}
+});
+$("classesBody").addEventListener("click",async ev=>{
+  const btn=ev.target.closest("[data-delete-class]"); if(!btn)return;
+  const id=btn.dataset.deleteClass; const item=classes.find(c=>String(c.id)===String(id)); if(!item)return;
+  if(students.some(s=>s.class_name===item.class_name)){showMsg("classesMsg","Is class mein students mojood hain. Pehle students ko doosri class mein move karein.","error");return;}
+  if(!confirm("Delete class "+item.class_name+"?"))return;
+  const {error}=await db.from("classes").delete().eq("id",id);
+  if(error)showMsg("classesMsg",error.message,"error");else{showMsg("classesMsg","Class deleted.","success");await loadAll();}
+});
+
+function resetStudentForm(){
+  $("studentForm").reset(); $("editStudentId").value=""; $("photoHint").textContent="Optional. Photo student photo bucket mein save hogi."; $("studentFormTitle").textContent="Student Admission";
+  $("saveStudentBtn").textContent="Save Student"; $("cancelEditBtn").classList.add("hidden");
+}
+$("cancelEditBtn").addEventListener("click",resetStudentForm);
+$("studentForm").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const id=$("editStudentId").value;
+  const record={student_name:$("studentName").value.trim(),father_name:$("fatherName").value.trim(),gr_number:$("grNumber").value.trim()||null,caste:$("caste").value.trim()||null,date_of_birth:$("dob").value||null,gender:$("gender").value||null,phone_number:$("phone").value.trim()||null,class_name:$("studentClass").value,section:$("section").value.trim()||null};
+  let result;
+  if(id) result=await db.from("students").update(record).eq("id",id).select().single();
+  else result=await db.from("students").insert(record).select().single();
+  if(result.error){showMsg("admissionMsg",result.error.message,"error");return;}
+  const photoFile=$("studentPhoto").files[0];
+  if(photoFile){
+    if(!photoFile.type.startsWith("image/")){showMsg("admissionMsg","Please select an image file.","error");return;}
+    const ext=(photoFile.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+    const path=`students/${result.data.id}/${Date.now()}.${ext}`;
+    const upload=await db.storage.from(PHOTO_BUCKET).upload(path,photoFile,{upsert:true,contentType:photoFile.type});
+    if(upload.error){showMsg("admissionMsg","Student record saved, lekin photo upload nahi hui: "+upload.error.message,"error");await loadAll();return;}
+    const upd=await db.from("students").update({photo_path:path}).eq("id",result.data.id);
+    if(upd.error){showMsg("admissionMsg","Record saved, photo uploaded, lekin photo path save nahi hua: "+upd.error.message,"error");await loadAll();return;}
+  }
+  showMsg("admissionMsg",id?"Student updated successfully.":"Student added successfully.","success");
+  resetStudentForm(); await loadAll(); openPage("studentsPage");
+});
+$("studentsBody").addEventListener("click",async ev=>{
+  const edit=ev.target.closest("[data-edit-student]");
+  const del=ev.target.closest("[data-delete-student]");
+  if(edit){
+    const s=students.find(x=>String(x.id)===String(edit.dataset.editStudent)); if(!s)return;
+    $("editStudentId").value=s.id; $("studentName").value=s.student_name||""; $("fatherName").value=s.father_name||"";
+    $("grNumber").value=s.gr_number||""; $("caste").value=s.caste||""; $("dob").value=s.date_of_birth||"";
+    $("gender").value=s.gender||""; $("phone").value=s.phone_number||""; $("section").value=s.section||"";
+    $("studentClass").value=s.class_name||""; $("photoHint").textContent=photoUrl(s)?"Existing photo available. Nayi photo select karenge to replace hogi.":"No saved photo found. Optional photo upload karein."; $("studentFormTitle").textContent="Edit Student";
+    $("saveStudentBtn").textContent="Update Student"; $("cancelEditBtn").classList.remove("hidden");
+    openPage("admissionPage"); return;
+  }
+  if(del){
+    if(!confirm("Is student record ko delete karna hai?"))return;
+    const {error}=await db.from("students").delete().eq("id",del.dataset.deleteStudent);
+    if(error)showMsg("studentsMsg",error.message,"error");else{showMsg("studentsMsg","Student deleted.","success");await loadAll();}
+  }
+});
+$("studentSearch").addEventListener("input",renderStudents);
+$("refreshStudentsBtn").addEventListener("click",loadAll);
+
+async function loadSeatPreview(){
+  const className=$("seatClass").value;
+  if(!className){showMsg("seatsMsg","Please select a class.","error");return;}
+  const {data,error}=await db.from("students").select("*").eq("class_name",className).order("created_at",{ascending:true});
+  if(error){showMsg("seatsMsg",error.message,"error");return;}
+  seatPreview=data||[]; renderSeatPreview();
+  showMsg("seatsMsg",`${seatPreview.length} student(s) found in ${className}. Starting number enter karein.`,"info");
+}
+function renderSeatPreview(){
+  const start=Number($("startingSeat").value);
+  $("seatsBody").innerHTML=seatPreview.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.student_name)}</td><td>${esc(s.father_name)}</td><td>${esc(s.gr_number||"—")}</td><td>${esc(s.seat_number||"—")}</td><td>${Number.isSafeInteger(start)&&start>0?start+i:"—"}</td></tr>`).join("")||'<tr><td colspan="6">No students found in this class.</td></tr>';
+}
+$("loadSeatStudentsBtn").addEventListener("click",loadSeatPreview);
+$("seatClass").addEventListener("change",()=>{seatPreview=[];$("seatsBody").innerHTML="";showMsg("seatsMsg","");});
+$("startingSeat").addEventListener("input",renderSeatPreview);
+$("allotSeatsBtn").addEventListener("click",async()=>{
+  const className=$("seatClass").value, start=Number($("startingSeat").value);
+  if(!className){showMsg("seatsMsg","Please select a class.","error");return;}
+  if(!Number.isSafeInteger(start)||start<1){showMsg("seatsMsg","Starting seat number sahi likhein.","error");return;}
+  if(!seatPreview.length){showMsg("seatsMsg","Pehle Show Class Students par click karein.","error");return;}
+  if(!confirm(`${seatPreview.length} students ko ${start} se seat numbers dene hain?`))return;
+  const btn=$("allotSeatsBtn");btn.disabled=true;
+  try{
+    for(let i=0;i<seatPreview.length;i++){
+      const {error}=await db.from("students").update({seat_number:String(start+i)}).eq("id",seatPreview[i].id);
+      if(error)throw error;
+    }
+    showMsg("seatsMsg","Seat numbers successfully allot ho gaye.","success");
+    await loadAll(); await loadSeatPreview();
+  }catch(err){showMsg("seatsMsg",err.message||String(err),"error");}
+  finally{btn.disabled=false;}
+});
+
+$("examForm").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const record={exam_name:$("examName").value.trim(),exam_date:$("examDate").value||null};
+  const {error}=await db.from("exams").insert(record);
+  if(error)showMsg("examsMsg",error.message,"error");
+  else{$("examForm").reset();showMsg("examsMsg","Exam added successfully.","success");await loadAll();}
+});
+$("examsBody").addEventListener("click",async ev=>{
+  const btn=ev.target.closest("[data-delete-exam]");if(!btn)return;
+  if(!confirm("Delete this exam?"))return;
+  const {error}=await db.from("exams").delete().eq("id",btn.dataset.deleteExam);
+  if(error)showMsg("examsMsg",error.message,"error");else{showMsg("examsMsg","Exam deleted.","success");await loadAll();}
+});
+
+function renderFeeOptions(){
+ const opts=students.map(st=>`<option value="${esc(st.id)}">${esc(st.student_name)} — ${esc(st.class_name||"")} ${esc(st.section||"")} (GR: ${esc(st.gr_number||"—")})</option>`).join("");
+ ["feeStudent","paymentStudent","feeReportStudent"].forEach(id=>{const el=$(id),old=el.value;el.innerHTML=(id==="feeReportStudent"?'<option value="">All Students</option>':'<option value="">Select Student</option>')+opts;if(old)el.value=old;});
+}
+function renderFeePayments(){
+ const filter=$("feeReportStudent").value;
+ const rows=feePayments.filter(p=>!filter||String(p.student_id)===String(filter));
+ $("feePaymentsBody").innerHTML=rows.map(p=>{const st=students.find(x=>String(x.id)===String(p.student_id))||{};return `<tr><td>${esc(p.payment_date||"—")}</td><td>${esc(st.student_name||"Unknown")}</td><td>${esc(st.class_name||"—")}</td><td>${p.fee_type==="admission"?"Admission Fee":"Monthly Fee"}</td><td>${esc(p.fee_month||"—")}</td><td>${esc(p.amount)}</td><td>${esc(p.receipt_no||"—")}</td></tr>`;}).join("")||'<tr><td colspan="7">No fee payments found.</td></tr>';
+}
+$("feeClass").addEventListener("change",()=>{const x=feeSettings.find(x=>x.class_name===$("feeClass").value);$("classAdmissionFee").value=x?.admission_fee??0;$("classMonthlyFee").value=x?.monthly_fee??0;});
+$("saveClassFeeBtn").addEventListener("click",async()=>{const cls=$("feeClass").value;if(!cls){showMsg("feeSetupMsg","Class select karein.","error");return;}const record={class_name:cls,admission_fee:Number($("classAdmissionFee").value||0),monthly_fee:Number($("classMonthlyFee").value||0)};const old=feeSettings.find(x=>x.class_name===cls);const q=old?db.from("fee_settings").update(record).eq("id",old.id):db.from("fee_settings").insert(record);const {error}=await q;if(error)showMsg("feeSetupMsg",error.message,"error");else{showMsg("feeSetupMsg","Class fee saved.","success");await loadAll();}});
+$("saveStudentFeeBtn").addEventListener("click",async()=>{const id=$("feeStudent").value;if(!id){showMsg("studentFeeMsg","Student select karein.","error");return;}const record={student_id:id,admission_fee:$("studentAdmissionFee").value===""?null:Number($("studentAdmissionFee").value),monthly_fee:$("studentMonthlyFee").value===""?null:Number($("studentMonthlyFee").value)};const old=studentFeeOverrides.find(x=>String(x.student_id)===String(id));const q=old?db.from("student_fee_overrides").update(record).eq("id",old.id):db.from("student_fee_overrides").insert(record);const {error}=await q;if(error)showMsg("studentFeeMsg",error.message,"error");else{showMsg("studentFeeMsg","Student fee saved. Blank fields use class fee.","success");await loadAll();}});
+$("paymentType").addEventListener("change",()=>{$("paymentMonth").disabled=$("paymentType").value!=="monthly";});
+$("receiveFeeBtn").addEventListener("click",async()=>{const sid=$("paymentStudent").value,type=$("paymentType").value,amount=Number($("paymentAmount").value),month=$("paymentMonth").value,date=$("paymentDate").value||new Date().toISOString().slice(0,10);if(!sid||!Number.isFinite(amount)||amount<=0||(type==="monthly"&&!month)){showMsg("paymentMsg","Student, amount aur monthly fee ke liye month enter karein.","error");return;}const st=students.find(x=>String(x.id)===String(sid));const receipt="MS-"+Date.now();const record={student_id:sid,fee_type:type,fee_month:type==="monthly"?month:null,amount,payment_date:date,receipt_no:receipt,note:$("paymentNote").value.trim()||null};const {error}=await db.from("fee_payments").insert(record);if(error){showMsg("paymentMsg",error.message,"error");return;}showMsg("paymentMsg","Payment saved. Receipt print window opening.","success");const w=window.open("","_blank");if(w){w.document.write(`<html><head><title>Fee Receipt</title><style>body{font-family:Arial;padding:25px;color:#102a43}.box{border:2px solid #102a43;padding:20px;max-width:500px;margin:auto}h2{text-align:center}p{border-bottom:1px solid #ddd;padding:8px}</style></head><body><div class="box"><h2>Moon Star Public High School</h2><h3>Fee Receipt</h3><p>Receipt: ${esc(receipt)}</p><p>Date: ${esc(date)}</p><p>Student: ${esc(st?.student_name||"")}</p><p>Father: ${esc(st?.father_name||"")}</p><p>GR Number: ${esc(st?.gr_number||"")}</p><p>Class: ${esc(st?.class_name||"")}</p><p>Fee: ${type==="admission"?"Admission Fee":"Monthly Fee"}</p><p>Month: ${esc(month||"—")}</p><p>Amount Received: ${esc(amount)}</p><p>Signature: __________________</p></div><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close();}$("paymentAmount").value="";$("paymentNote").value="";await loadAll();});
+$("feeReportStudent").addEventListener("change",renderFeePayments);$("refreshFeesBtn").addEventListener("click",loadAll);
+
+$("subjectClass").addEventListener("change",renderSubjects);
+$("addSubjectBtn").addEventListener("click",async()=>{
+  const className=$("subjectClass").value, subjectName=$("subjectName").value.trim();
+  if(!className||!subjectName){showMsg("subjectsMsg","Class aur subject name select/enter karein.","error");return;}
+  const {error}=await db.from("subjects").insert({class_name:className,subject_name:subjectName});
+  if(error)showMsg("subjectsMsg",error.message,"error");else{$("subjectName").value="";showMsg("subjectsMsg","Subject added successfully.","success");await loadAll();}
+});
+$("subjectsBody").addEventListener("click",async ev=>{
+  const edit=ev.target.closest("[data-edit-subject]"), del=ev.target.closest("[data-delete-subject]");
+  if(edit){const item=subjects.find(x=>String(x.id)===edit.dataset.editSubject);if(!item)return;const name=prompt("Subject ka naya naam:",item.subject_name);if(name===null)return;if(!name.trim()){alert("Subject name khali nahi ho sakta.");return;}const {error}=await db.from("subjects").update({subject_name:name.trim()}).eq("id",item.id);if(error)showMsg("subjectsMsg",error.message,"error");else{showMsg("subjectsMsg","Subject updated.","success");await loadAll();}}
+  if(del){const item=subjects.find(x=>String(x.id)===del.dataset.deleteSubject);if(!item||!confirm(`Delete ${item.subject_name} from ${item.class_name}?`))return;const {error}=await db.from("subjects").delete().eq("id",item.id);if(error)showMsg("subjectsMsg",error.message,"error");else{showMsg("subjectsMsg","Subject deleted.","success");await loadAll();}}
+});
+function printSlipCards(){
+  const cls=$("slipClass").value;if(!cls){showMsg("slipMsg","Please select a class.","error");return;}
+  const list=students.filter(s=>s.class_name===cls).sort((a,b)=>String(a.student_name||"").localeCompare(String(b.student_name||"")));
+  if(!list.length){showMsg("slipMsg","Is class mein students nahi mile.","error");return;}
+  const subs=subjects.filter(x=>x.class_name===cls).map(x=>x.subject_name);
+  if(!subs.length){showMsg("slipMsg","Is class ke subjects pehle Subjects section mein add karein.","error");return;}
+  const session=$("slipSession").value.trim()||"Examination";
+  const rows=list.map(st=>{
+    const pic=photoUrl(st);
+    const dateOfBirth=st.date_of_birth?new Date(st.date_of_birth+"T00:00:00").toLocaleDateString("en-GB"):"—";
+    const logo=`<div class="crest"><span>☾</span><b>★</b></div>`;
+    return `<article class="pair">
+      <section class="ticket slip">
+        <div class="topcurve"></div><div class="ticket-head">${logo}<div class="schoolname">MOON STAR PUBLIC HIGH SCHOOL<br><small>KHANWAHAN</small></div></div>
+        <div class="ticket-title">SLIP CARD<small>${esc(session)}</small></div>
+        <div class="stripe"></div>
+        <div class="slip-content"><div class="fields">
+          <div><b>GR NO.</b><span>${esc(st.gr_number||"—")}</span></div>
+          <div><b>SEAT NO.</b><span>${esc(st.seat_number||"—")}</span></div>
+          <div><b>NAME</b><span>${esc(st.student_name||"—")}</span></div>
+          <div><b>F.NAME</b><span>${esc(st.father_name||"—")}</span></div>
+          <div><b>CLASS</b><span>${esc(st.class_name||"—")}</span></div>
+          <div><b>SECTION</b><span>${esc(st.section||"—")}</span></div>
+          <div><b>CASTE</b><span>${esc(st.caste||"—")}</span></div>
+          <div><b>DATE OF BIRTH</b><span>${esc(dateOfBirth)}</span></div>
+        </div><div class="student-photo">${pic?`<img src="${esc(pic)}" alt="Student photo">`:`<span>PHOTO</span>`}</div></div>
+        <footer class="slip-footer"><b class="signature-space"></b><span>CONTROLLER OF EXAMINATION</span></footer>
+      </section>
+      <section class="ticket timetable">
+        <div class="topcurve"></div><div class="ticket-head">${logo}<div class="schoolname">MOON STAR PUBLIC HIGH SCHOOL<br><small>KHANWAHAN</small></div></div>
+        <div class="tt-pill">TIME TABLE</div><div class="stripe"></div>
+        <table class="tt-table"><thead><tr><th>SUBJECT</th><th>MARKS</th><th>DATE</th><th>TIME</th><th>DURATION</th></tr></thead><tbody>${subs.map((subject,i)=>`<tr><td>${esc(subject)}</td><td>100</td><td></td><td></td><td></td></tr>`).join("")}</tbody></table>
+        <footer class="tt-footer"></footer>
+      </section>
+    </article>`;
+  }).join("");
+  const w=window.open("","_blank");if(!w){showMsg("slipMsg","Browser popup allow karein, phir dobara click karein.","error");return;}
+  w.document.open();w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(cls)} Slip Cards</title><style>
+  @page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#102a43;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sheet{width:194mm;margin:0 auto;display:grid;grid-template-columns:1fr;grid-auto-rows:66.5mm;row-gap:3mm}
+  .pair{height:66.5mm;width:194mm;display:grid;grid-template-columns:1fr 1fr;gap:2mm;break-inside:avoid;page-break-inside:avoid}
+  .ticket{height:66.5mm;position:relative;overflow:hidden;border:.45mm solid #9bb4ca;border-radius:5mm;background:#edf6ff;box-shadow:0 1mm 2mm #b7c8d8;display:flex;flex-direction:column}
+  .topcurve{position:absolute;right:-8mm;top:-12mm;width:42mm;height:42mm;border:1.6mm solid #efbd22;border-radius:50%;opacity:.95}
+  .ticket-head{height:12mm;min-height:12mm;position:relative;display:flex;align-items:flex-start;justify-content:center;padding:2mm 2mm 0}
+  .crest{position:absolute;left:3mm;top:1.5mm;width:13mm;height:13mm;border:.6mm double #183c62;border-radius:50%;background:#f8fbff;color:#173d64;display:flex;align-items:center;justify-content:center;font-size:9mm;line-height:1}
+  .crest b{position:absolute;font-size:3mm;top:2.4mm;left:5mm}
+  .schoolname{text-align:center;font-size:7.1pt;font-weight:bold;line-height:1.25;color:#163b63;padding-left:12mm;padding-right:2mm;white-space:nowrap}
+  .schoolname small{font-size:6.3pt;letter-spacing:.4mm}
+  .ticket-title{text-align:center;font-size:8pt;font-weight:bold;line-height:1.1;margin-top:-1mm;color:#153e69}
+  .ticket-title small{display:block;font-size:6.4pt;font-weight:normal;margin-top:.7mm}
+  .stripe{height:2.4mm;min-height:2.4mm;margin-top:auto;background:linear-gradient(90deg,#123f78 0 76%,#f2bd19 76% 100%);position:relative;z-index:1}
+  .slip-content{height:33mm;display:flex;padding:1.5mm 2mm 1mm;gap:2mm;position:relative;z-index:1}
+  .fields{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(4mm,auto);font-size:6.1pt;min-width:0}
+  .fields div{display:grid;grid-template-columns:19mm 1fr;align-items:center;border-bottom:.2mm solid #c8d7e5;min-width:0}
+  .fields b{font-size:5.3pt;color:#21476c;background:#dceaf7;padding:1mm .7mm;height:100%;display:flex;align-items:center}
+  .fields span{padding:0 1mm;overflow-wrap:anywhere;font-size:6pt}
+  .student-photo{width:23mm;height:29mm;flex:0 0 23mm;border:.5mm solid #7896b1;background:#fff;display:flex;align-items:center;justify-content:center;color:#7b8fa2;font-size:7pt;overflow:hidden}
+  .student-photo img{width:100%;height:100%;object-fit:cover}
+  .slip-footer{height:10.5mm;min-height:10.5mm;background:#12427d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5mm;font-size:5.5pt;position:relative;z-index:1}
+  .slip-footer .signature-space{display:block;width:32mm;height:4mm;border-bottom:.25mm solid #fff;font-size:0;line-height:1}
+  .slip-footer span{font-weight:bold;letter-spacing:.2mm}
+  .tt-pill{align-self:center;background:#164779;color:#fff;border-radius:5mm;padding:1.4mm 13mm;font-size:7.2pt;font-weight:bold;margin:0 0 1.4mm;position:relative;z-index:1}
+  .timetable .stripe{margin-top:0}
+  .tt-table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:0;position:relative;z-index:1;flex:1}
+  .tt-table th{background:#164779;color:#fff;font-size:5.3pt;padding:1.5mm .5mm;border:.2mm solid #c8d7e5;text-align:center}
+  .tt-table td{font-size:5.2pt;padding:1.3mm .5mm;border:.2mm solid #d1deea;text-align:center;height:5mm;color:#234767}
+  .tt-table tbody tr:nth-child(even){background:#dceaf7}.tt-table tbody tr:nth-child(odd){background:#f7fbff}
+  .tt-table th:first-child,.tt-table td:first-child{text-align:left;padding-left:1.5mm;width:31%}
+  .tt-footer{height:7mm;min-height:7mm;background:#12427d;position:relative}
+  @media print{.pair:nth-child(4n):not(:last-child){break-after:page;page-break-after:always}}
+  </style></head><body><main class="sheet">${rows}</main><script>window.onload=()=>{setTimeout(()=>window.print(),900)};<\/script></body></html>`);w.document.close();
+  showMsg("slipMsg",`${list.length} students ke cards tayyar hain. Print window mein Save as PDF select karein.`,"success");
+}
+$("printSlipBtn").addEventListener("click",printSlipCards);
+
+async function init(){
+  try{
+    const {data,error}=await db.auth.getSession();
+    if(error)throw error;
+    const session=data.session;
+    if(session&&onlyAdmin(session.user.email))showApp(session);
+    else{if(session)await db.auth.signOut();showLogin();}
+    const hash=location.hash||"";
+    if(hash.includes("access_token")||hash.includes("type=recovery")){
+      $("newPasswordBox").classList.remove("hidden");
+    }
+  }catch(err){showLogin();showMsg("loginMsg",err.message||String(err),"error");}
+}
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==="SIGNED_IN"&&session&&onlyAdmin(session.user.email)){
+    $("loginBox").classList.add("hidden");$("appBox").classList.remove("hidden");
+    $("signedInAs").textContent="Signed in: "+(session.user.email||"");
+    loadAll();
+  }else if(event==="SIGNED_OUT"){showLogin();}
+});
+init();
+})();
+</script>
+</body>
+</html>
